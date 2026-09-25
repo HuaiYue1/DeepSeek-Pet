@@ -2,7 +2,7 @@
   "name": "deepseek-pet",
   "version": "0.1.0",
   "private": true,
-  "description": "大肥鱼 — a DeepSeek-whale-inspired desktop pet",
+  "description": "深深（大肥鱼）— a DeepSeek-inspired whale-girl desktop pet",
   "type": "module",
   "license": "MIT",
   "scripts": {

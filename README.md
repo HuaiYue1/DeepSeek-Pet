@@ -1,8 +1,8 @@
-# DeepSeek-Pet · 大肥鱼桌宠
+# DeepSeek-Pet · 深深桌宠
 
-一只以 DeepSeek 鲸鱼（大肥鱼）为原型的桌面宠物。
+一只以 DeepSeek 为原型的桌面宠物：鲸鱼娘「深深」，外号大肥鱼。
 
-![大肥鱼角色设定图](art/character-sheet.png)
+![深深角色设定图](art/character-sheet.png)
 
 ## 进度
 

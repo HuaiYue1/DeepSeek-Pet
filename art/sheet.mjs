@@ -1,38 +1,40 @@
-// Character sheet (角色设定图) for 大肥鱼, laid out as a 1800x1200 HTML page.
-import { fatFishSVG, EXPRESSIONS, PALETTE } from './fatfish.js';
+// Character sheet (角色设定图) for 深深, laid out as an 1800x1280 HTML page.
+import { characterSVG, EXPRESSIONS, PALETTE } from './shenshen.js';
 
 const PROFILE = [
-  ['名字', '大肥鱼'],
-  ['物种', '鲸鱼（但坚持说自己是鱼）'],
-  ['代表色', '深度求索蓝 #4D6BFE'],
-  ['性格', '好奇、话痨，凡事先深度思考'],
-  ['口头禅', '「嗯，让我想想……」'],
-  ['爱吃', 'Token，按个数吃，不按斤'],
-  ['特技', '喷水、深度思考、长上下文'],
-  ['弱点', '服务器一繁忙就头晕'],
+  ['名字', '深深（DeepSeek 娘）'],
+  ['外号', '大肥鱼（本人坚决不认）'],
+  ['物种', '鲸鱼娘 · 体重 671B'],
+  ['干活', 'MoE，每次只用 37B 的力气'],
+  ['出身', '杭州 · 深度求索'],
+  ['生日', '1 月 20 日（R1 发布日）'],
+  ['口头禅', '「嗯，用户说……」'],
+  ['记性', '128K 上下文，记仇也记得清'],
+  ['爱好', '开源（MIT 协议）、便宜大碗'],
+  ['弱点', '人一多就「服务器繁忙」'],
 ];
 
 const NOTES = [
-  ['圆滚滚的身体', '大肥鱼，名副其实'],
-  ['翘起的双叶尾巴', '来自 logo 的鲸尾'],
-  ['白色月牙肚皮', '来自 logo 的白色弧线'],
-  ['斜眼差分', 'logo 同款眼神'],
+  ['鲸鳍耳朵 + 鲸鱼尾巴', '蓝鲸拟人'],
+  ['鲸尾呆毛', '头顶翘着一条小尾巴'],
+  ['「R1」发卡', '推理模型的名字'],
+  ['围裙上的小鲸鱼', '初代大肥鱼彩蛋'],
 ];
 
 const SWATCHES = [
-  ['主体蓝', PALETTE.blue],
-  ['高光', PALETTE.blueLight],
-  ['暗部', PALETTE.blueDark],
-  ['描边', PALETTE.line],
-  ['肚皮', PALETTE.belly],
-  ['腮红', PALETTE.blush],
-  ['Token', PALETTE.gold],
+  ['DS 蓝', PALETTE.blue],
+  ['发色', PALETTE.hair],
+  ['发梢', PALETTE.hairTip],
+  ['瞳色', PALETTE.iris2],
+  ['女仆装', PALETTE.dress],
+  ['围裙', PALETTE.white],
+  ['金饰', PALETTE.gold],
 ];
 
-const GRID = ['idle', 'happy', 'think', 'busy', 'sleep', 'sideeye', 'surprised', 'eat'];
+const GRID = ['idle', 'think', 'busy', 'happy', 'aha', 'eat', 'sleep', 'sideeye'];
 
 const BUBBLES = [
-  [70, 330, 22], [112, 270, 12], [610, 420, 18], [640, 372, 9], [590, 720, 14], [80, 690, 16], [52, 640, 8], [636, 250, 7],
+  [62, 420, 20], [96, 372, 10], [640, 520, 16], [664, 474, 8], [630, 860, 12], [52, 760, 14], [80, 700, 7], [652, 300, 9],
 ];
 
 function sparkle(x, y, s, fill) {
@@ -42,14 +44,16 @@ function sparkle(x, y, s, fill) {
 
 function heroDecor() {
   const p = PALETTE;
-  const bubbles = BUBBLES.map(([x, y, r]) => `
-    <circle cx="${x}" cy="${y}" r="${r}" fill="#fff" fill-opacity=".45" stroke="${p.line}" stroke-opacity=".35" stroke-width="3"/>
-    <circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${Math.max(2, r * 0.22)}" fill="#fff"/>`).join('');
-  return `<svg class="decor" viewBox="0 0 700 1120" width="700" height="1120">
+  const bubbles = BUBBLES.map(([x, y, rr]) => `
+    <circle cx="${x}" cy="${y}" r="${rr}" fill="#fff" fill-opacity=".45" stroke="${p.line}" stroke-opacity=".3" stroke-width="2.5"/>
+    <circle cx="${x - rr * 0.35}" cy="${y - rr * 0.35}" r="${Math.max(2, rr * 0.22)}" fill="#fff"/>`).join('');
+  const rays = [-28, -14, 0, 14, 28].map((a) => `<path d="M350 -40 L${350 + Math.tan((a - 5) * Math.PI / 180) * 900} 860 L${350 + Math.tan((a + 5) * Math.PI / 180) * 900} 860 Z" fill="#fff" opacity=".22"/>`).join('');
+  return `<svg class="decor" viewBox="0 0 700 1200" width="700" height="1200">
+    ${rays}
     ${bubbles}
-    ${sparkle(600, 190, 16, p.gold)}${sparkle(560, 150, 8, p.gold)}${sparkle(90, 820, 10, '#fff')}
-    <path d="M0 900 C80 870 160 870 240 900 S400 930 480 900 S620 870 700 895 V1120 H0 Z" fill="#fff" opacity=".35"/>
-    <path d="M0 950 C90 925 170 930 250 955 S420 985 510 955 S640 925 700 945 V1120 H0 Z" fill="#fff" opacity=".55"/>
+    ${sparkle(610, 210, 15, p.gold)}${sparkle(574, 176, 7, p.gold)}${sparkle(84, 560, 9, '#fff')}
+    <path d="M0 980 C80 950 160 950 240 980 S400 1010 480 980 S620 950 700 975 V1200 H0 Z" fill="#fff" opacity=".35"/>
+    <path d="M0 1030 C90 1005 170 1010 250 1035 S420 1065 510 1035 S640 1005 700 1025 V1200 H0 Z" fill="#fff" opacity=".55"/>
   </svg>`;
 }
 
@@ -61,56 +65,56 @@ export function characterSheetHTML({ fontCSS = '' } = {}) {
   const cards = GRID.map((key) => {
     const e = EXPRESSIONS[key];
     return `<div class="card">
-      <div class="pic">${fatFishSVG({ expression: key, id: `g-${key}`, size: 186 })}</div>
+      <div class="pic">${characterSVG({ expression: key, id: `g-${key}`, size: 226, crop: 'bust' })}</div>
       <div class="label"><span>${e.name}</span><small>${key}</small></div>
       <div class="quote">${e.line}</div>
     </div>`;
   }).join('');
 
   return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>大肥鱼 · 角色设定</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>深深 · 角色设定</title>
 <style>
 ${fontCSS}
-:root { --blue: ${p.blue}; --line: ${p.line}; --ink: ${p.eye}; --muted: #5C6394; }
+:root { --blue: ${p.blue}; --line: ${p.line}; --ink: ${p.line}; --muted: #5C6394; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  width: 1800px; height: 1200px; overflow: hidden; color: var(--ink);
+  width: 1800px; height: 1280px; overflow: hidden; color: var(--ink);
   font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Zen Hei', sans-serif;
   background: #F3F5FF radial-gradient(#D6DDFB 1.6px, transparent 1.6px) 0 0 / 26px 26px;
 }
 .cute { font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif; font-weight: 400; }
-.sheet { display: flex; gap: 40px; padding: 40px; height: 1200px; }
+.sheet { display: flex; gap: 40px; padding: 40px; height: 1280px; }
 
 /* ---------- hero 立绘 */
 .hero {
-  position: relative; flex: none; width: 700px; height: 1120px; border-radius: 44px; overflow: hidden;
+  position: relative; flex: none; width: 700px; height: 1200px; border-radius: 44px; overflow: hidden;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0, rgba(255,255,255,0) 44%),
-    linear-gradient(172deg, #EEF2FF 0%, #D8E0FF 55%, #B8C6FF 100%);
+    radial-gradient(circle at 52% 40%, rgba(255,255,255,.9) 0, rgba(255,255,255,0) 42%),
+    linear-gradient(172deg, #EEF2FF 0%, #D8E0FF 55%, #B4C3FF 100%);
   box-shadow: 0 24px 60px rgba(35,53,166,.20), inset 0 0 0 4px rgba(255,255,255,.7);
 }
 .hero .decor { position: absolute; inset: 0; }
-.hero .fish { position: absolute; left: 30px; top: 232px; }
+.hero .girl { position: absolute; left: 36px; top: 116px; }
 .hero .tag {
-  position: absolute; right: 36px; top: 40px; display: flex; gap: 10px; align-items: center;
+  position: absolute; right: 34px; top: 38px; display: flex; gap: 10px; align-items: center;
   font-size: 18px; font-weight: 700; letter-spacing: 1px; color: var(--line);
 }
 .hero .tag b { background: var(--line); color: #fff; padding: 6px 14px; border-radius: 999px; }
 .hero .tag span { background: #fff; padding: 6px 14px; border-radius: 999px; box-shadow: 0 4px 12px rgba(35,53,166,.12); }
 .say {
-  position: absolute; left: 44px; top: 128px; padding: 22px 30px; background: #fff; border-radius: 30px;
-  border: 5px solid var(--line); font-size: 36px; line-height: 1.3; color: var(--ink);
-  box-shadow: 0 10px 0 rgba(35,53,166,.12);
+  position: absolute; left: 34px; top: 34px; padding: 16px 26px; background: #fff; border-radius: 28px;
+  border: 5px solid var(--line); font-size: 30px; line-height: 1.3; color: var(--ink);
+  box-shadow: 0 8px 0 rgba(35,53,166,.12);
 }
-.say .tip { position: absolute; left: 96px; bottom: -41px; }
+.say .tip { position: absolute; left: 240px; bottom: -39px; }
 .say em { font-style: normal; color: var(--blue); }
-.name { position: absolute; left: 0; right: 0; bottom: 58px; text-align: center; }
+.name { position: absolute; left: 44px; bottom: 52px; }
 .name h1 {
-  font-size: 132px; line-height: 1; color: var(--blue); letter-spacing: 6px;
-  -webkit-text-stroke: 10px #fff; paint-order: stroke fill;
-  text-shadow: 0 10px 0 rgba(35,53,166,.18);
+  font-size: 118px; line-height: 1; color: var(--blue); letter-spacing: 4px;
+  -webkit-text-stroke: 10px #fff; paint-order: stroke fill; text-shadow: 0 10px 0 rgba(35,53,166,.18);
 }
-.name p { margin-top: 14px; font-size: 20px; font-weight: 700; letter-spacing: 8px; color: var(--line); }
+.name p { margin-top: 12px; font-size: 18px; font-weight: 700; letter-spacing: 5px; color: var(--line); }
+.name p i { font-style: normal; background: var(--line); color: #fff; padding: 2px 10px; border-radius: 6px; letter-spacing: 2px; margin-left: 6px; }
 
 /* ---------- right column */
 .side { flex: 1; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
@@ -121,8 +125,8 @@ body {
 .panel { background: #fff; border-radius: 28px; padding: 20px 28px; box-shadow: 0 10px 30px rgba(35,53,166,.10); }
 .panel h3 { font-size: 26px; color: var(--line); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
 .panel h3::before { content: ''; width: 10px; height: 26px; border-radius: 5px; background: var(--blue); }
-.profile { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px; }
-.row { display: flex; align-items: center; gap: 14px; font-size: 19px; }
+.profile { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; }
+.row { display: flex; align-items: center; gap: 14px; font-size: 18.5px; }
 .row .k {
   flex: none; width: 76px; text-align: center; padding: 4px 0; border-radius: 999px;
   background: #E8EDFF; color: var(--line); font-weight: 700; font-size: 16px;
@@ -145,22 +149,23 @@ body {
 .sw code { font-family: 'DejaVu Sans Mono', monospace; font-size: 10.5px; color: var(--muted); }
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .card { background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 10px 30px rgba(35,53,166,.10); }
-.card .pic { height: 186px; display: grid; place-items: center; background: linear-gradient(180deg, #F4F6FF, #E4E9FF); }
+.card .pic { height: 226px; display: grid; place-items: center; background: linear-gradient(180deg, #F4F6FF, #DCE3FF); }
+.card .pic svg { display: block; }
 .card .label { display: flex; align-items: baseline; gap: 8px; padding: 12px 18px 2px; }
-.card .label span { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 27px; color: var(--line); }
+.card .label span { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 26px; color: var(--line); }
 .card .label small { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
-.card .quote { padding: 0 18px 16px; font-size: 14.5px; color: var(--muted); white-space: nowrap; }
+.card .quote { padding: 0 18px 16px; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style></head>
 <body><div class="sheet">
   <section class="hero" id="hero">
     ${heroDecor()}
-    <div class="tag"><b>No.001</b><span>DeepSeek 桌宠</span></div>
-    <div class="say cute">你好呀！我是<em>大肥鱼</em>～<svg class="tip" width="60" height="44" viewBox="0 0 60 44"><path d="M2 0 L40 44 L50 0" fill="#fff" stroke="${p.line}" stroke-width="5" stroke-linejoin="round"/><rect x="0" y="0" width="60" height="4" fill="#fff"/></svg></div>
-    <div class="fish">${fatFishSVG({ expression: 'hello', id: 'hero', size: 640 })}</div>
-    <div class="name"><h1 class="cute">大肥鱼</h1><p>DEEPSEEK · FAT FISH</p></div>
+    <div class="girl">${characterSVG({ expression: 'hello', id: 'hero', size: 628, labels: false })}</div>
+    <div class="tag"><b>No.001</b><span>DeepSeek 娘</span></div>
+    <div class="say cute">我是 <em>DeepSeek</em>，<br>很高兴见到你！<svg class="tip" width="60" height="44" viewBox="0 0 60 44"><path d="M2 0 L40 44 L50 0" fill="#fff" stroke="${p.line}" stroke-width="5" stroke-linejoin="round"/><rect x="0" y="0" width="60" height="4" fill="#fff"/></svg></div>
+    <div class="name"><h1 class="cute">深深</h1><p>DEEPSEEK 娘<i>外号 大肥鱼</i></p></div>
   </section>
   <section class="side">
-    <div class="head"><h2 class="cute">角色设定</h2><p>CHARACTER SHEET</p><span class="ver">立绘 v0.1 · 表情差分 ×8</span></div>
+    <div class="head"><h2 class="cute">角色设定</h2><p>CHARACTER SHEET</p><span class="ver">立绘 v0.2 · 表情差分 ×9</span></div>
     <div class="panel"><h3 class="cute">基础档案</h3><div class="profile">${profile}</div></div>
     <div class="duo">
       <div class="panel notes"><h3 class="cute">设计要点</h3><ul>${notes}</ul></div>
