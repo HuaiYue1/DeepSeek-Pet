@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="hello-body" gradientUnits="userSpaceOnUse" cx="184" cy="233" r="306" gradientTransform="translate(0 233) scale(1 .885) translate(0 -233)">
+      <stop offset="0" stop-color="#7D94FF"/>
+      <stop offset="0.45" stop-color="#4D6BFE"/>
+      <stop offset="1" stop-color="#3A55E6"/>
+    </radialGradient>
+    <linearGradient id="hello-tail" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#3A55E6"/>
+      <stop offset="1" stop-color="#7D94FF"/>
+    </linearGradient>
+    <linearGradient id="hello-belly" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E3E9FF"/>
+    </linearGradient>
+    <clipPath id="hello-clip"><path d="M46 302 C46 207 131 132 238 132 C345 132 428 207 428 302 C428 412 354 470 238 470 C122 470 46 412 46 302 Z"/></clipPath>
+    <filter id="hello-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+  </defs>
+  <ellipse class="shadow" cx="240" cy="494" rx="150" ry="13" fill="#1B2150" opacity=".15"/>
+  <g class="fish" transform="rotate(-5 238 300)">
+    <g class="tail" transform="translate(360 208) rotate(2)">
+      <path d="M-30 30 C-32 -8 -32 -36 -28 -56 C-40 -72 -50 -100 -44 -124 C-38 -148 -8 -150 -4 -126 C-2 -110 2 -96 10 -86 C28 -100 56 -118 82 -114 C102 -110 104 -88 90 -78 C72 -58 48 -46 28 -44 C28 -20 28 6 30 30 Z" fill="url(#hello-tail)" stroke="#2335A6" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M10 -86 C8 -72 5 -62 1 -54" fill="none" stroke="#2335A6" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+      <ellipse cx="-24" cy="-118" rx="7" ry="13" transform="rotate(-10 -24 -118)" fill="#fff" opacity=".35"/>
+    </g>
+    <g class="body">
+      <path d="M46 302 C46 207 131 132 238 132 C345 132 428 207 428 302 C428 412 354 470 238 470 C122 470 46 412 46 302 Z" fill="url(#hello-body)"/>
+      <g clip-path="url(#hello-clip)">
+        <path d="M70 326 C130 314 208 318 262 344 C312 368 346 410 360 446 C326 454 286 452 238 452 C138 452 76 410 66 348 C65 338 66 330 70 326 Z" fill="url(#hello-belly)"/>
+      </g>
+      <path d="M46 302 C46 207 131 132 238 132 C345 132 428 207 428 302 C428 412 354 470 238 470 C122 470 46 412 46 302 Z" fill="none" stroke="#2335A6" stroke-width="7"/>
+      <ellipse cx="170" cy="178" rx="46" ry="20" transform="rotate(-24 170 178)" fill="#fff" opacity=".35"/>
+      <circle cx="224" cy="158" r="8" fill="#fff" opacity=".35"/>
+    </g>
+    <g class="fin" transform="rotate(-62 292 353)">
+      <path d="M292 334 C322 330 354 352 370 386 C376 400 366 412 352 406 C328 396 306 386 292 372 C282 364 280 340 292 334 Z" fill="#4D6BFE"/>
+      <path d="M292 334 C322 330 354 352 370 386 C376 400 366 412 352 406 C328 396 306 386 292 372" fill="none" stroke="#2335A6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M312 350 C330 356 344 368 352 382" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+    </g>
+    <g class="face">
+      <g class="blush" filter="url(#hello-soft)" fill="#FF9DBE" opacity="0.85">
+        <ellipse cx="98" cy="300" rx="19" ry="11"/>
+        <ellipse cx="246" cy="300" rx="19" ry="11"/>
+      </g>
+      <g class="eyes">
+      <ellipse cx="128" cy="262" rx="17" ry="22" fill="#1B2150"/>
+      <path d="M133 245 Q135.34 251.66 142 254 Q135.34 256.34 133 263 Q130.66 256.34 124 254 Q130.66 251.66 133 245 Z" fill="#FFFFFF"/>
+      <circle cx="123" cy="271" r="3.2" fill="#fff" opacity=".9"/>
+      <ellipse cx="218" cy="262" rx="17" ry="22" fill="#1B2150"/>
+      <path d="M223 245 Q225.34 251.66 232 254 Q225.34 256.34 223 263 Q220.66 256.34 214 254 Q220.66 251.66 223 245 Z" fill="#FFFFFF"/>
+      <circle cx="213" cy="271" r="3.2" fill="#fff" opacity=".9"/></g>
+      <g class="mouth">
+    <clipPath id="hello-mo"><path d="M158 290 Q174 296 190 290 Q188 312 174 312 Q160 312 158 290 Z"/></clipPath>
+    <path d="M158 290 Q174 296 190 290 Q188 312 174 312 Q160 312 158 290 Z" fill="#C2335A"/>
+    <ellipse cx="176" cy="314" rx="9.92" ry="9" fill="#FF8FA6" clip-path="url(#hello-mo)"/>
+    <path d="M158 290 Q174 296 190 290 Q188 312 174 312 Q160 312 158 290 Z" fill="none" stroke="#1B2150" stroke-width="4.5" stroke-linejoin="round"/></g>
+    </g>
+  </g>
+  <g class="fx"><g fill="#fff" fill-opacity=".35" stroke="#2335A6" stroke-width="3.5" stroke-opacity=".55">
+      <circle cx="58" cy="148" r="15"/><circle cx="86" cy="102" r="9"/><circle cx="470" cy="236" r="11"/><circle cx="486" cy="200" r="6"/>
+    </g>
+    <g fill="#fff"><circle cx="53" cy="143" r="4"/><circle cx="467" cy="232" r="3"/></g><path d="M116 84 Q119.12 92.88 128 96 Q119.12 99.12 116 108 Q112.88 99.12 104 96 Q112.88 92.88 116 84 Z" fill="#FFC940"/><path d="M150 57 Q151.82 62.18 157 64 Q151.82 65.82 150 71 Q148.18 65.82 143 64 Q148.18 62.18 150 57 Z" fill="#FFC940"/></g>
+</svg>
