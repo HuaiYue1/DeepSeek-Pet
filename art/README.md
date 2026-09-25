@@ -1,8 +1,18 @@
 # 深深 · 立绘与表情差分
 
-![角色设定图](character-sheet.png)
+正式立绘会用 AI 绘图模型出图，风格和参考图保持一致（日系二次元萌系立绘）。流程：
 
-设计方向：萌系鲸鱼娘 + 女仆装，再塞进 DeepSeek 在网上的各种梗。
+1. 用 [`prompts.md`](prompts.md) 里的提示词出主立绘，再局部重绘脸和手，做出各个表情。
+2. 把原图放进 `raw/`，用 `cutout.py` 抠掉背景、统一对齐：
+
+   ```bash
+   pip install onnxruntime numpy pillow
+   python art/cutout.py art/raw/*.png      # 输出到 art/png/
+   ```
+
+3. 加上梗文字（牌子、思考气泡、发卡上的「R1」），重做角色设定图。
+
+`character-sheet.png` 和 `shenshen.js` 是之前的矢量草稿，只用来定角色设定和表情，也可以在正式图到位前给桌宠当占位图。
 
 ## 角色档案
 
@@ -54,15 +64,14 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `shenshen.js` | 角色 SVG 生成器，之后桌宠程序会直接用它。后发、尾巴、腿、衣服、手臂、头、特效各在一个分组，方便做头发飘动、摇尾巴、眨眼之类的动画 |
-| `geom.js` | 画发束、袖子、荷叶边用的曲线工具 |
-| `svg/` | 每个表情一张 SVG，600×1000，透明背景 |
-| `png/` | 同样的内容导出成 PNG |
-| `hero.png` | 主立绘，1400×2400 |
-| `character-sheet.png` | 角色设定图，1800×1280 |
+| `prompts.md` | AI 绘图提示词：主立绘（中文、SD/NovelAI 标签、Midjourney 三种写法）和 8 个表情的局部重绘描述 |
+| `cutout.py` | 抠图脚本：isnet-anime 模型去背景、去白边，所有表情用同一个裁切框对齐 |
+| `shenshen.js`、`geom.js` | 矢量草稿的生成器和曲线工具 |
+| `svg/`、`png/` | 矢量草稿导出的 9 个表情（正式图出来后 `png/` 会被替换） |
+| `hero.png`、`character-sheet.png` | 矢量草稿的立绘和设定图 |
 | `sheet.mjs`、`build.mjs` | 设定图排版和出图脚本 |
 
-## 重新出图
+## 重新生成矢量草稿
 
 ```bash
 npm install
