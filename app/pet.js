@@ -159,18 +159,23 @@ function buildHitMap(key, url) {
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       const alpha = new Uint8Array(canvas.width * canvas.height);
-      let sx = 0, sy = 0, n = 0;
+      let sx = 0, sy = 0, ss = 0, n = 0;
       for (let i = 0; i < alpha.length; i++) {
         alpha[i] = data[i * 4 + 3];
         if (alpha[i] > 40) {
-          sx += i % canvas.width;
-          sy += Math.floor(i / canvas.width);
+          const x = i % canvas.width;
+          const y = Math.floor(i / canvas.width);
+          sx += x;
+          sy += y;
+          ss += x * x + y * y;
           n += 1;
         }
       }
-      // her centre of mass, for how she hangs when picked up
+      // her centre of mass and how spread out she is around it (radius of
+      // gyration), for how she turns when picked up
       const com = n ? [sx / n, sy / n] : [canvas.width / 2, canvas.height / 2];
-      hitMaps[key] = { w: canvas.width, h: canvas.height, alpha, com };
+      const spread = n ? Math.sqrt(Math.max(0, ss / n - com[0] ** 2 - com[1] ** 2)) : canvas.height / 4;
+      hitMaps[key] = { w: canvas.width, h: canvas.height, alpha, com, spread };
       resolve();
     };
     img.onerror = () => resolve();
@@ -288,7 +293,8 @@ function pickUp() {
   const box = petEl.getBoundingClientRect();
   const map = hitMaps[current];
   const com = map ? [(map.com[0] * box.width) / map.w, (map.com[1] * box.height) / map.h] : [box.width / 2, box.height / 2];
-  Swing.grab(swing, { pivot: grabbedAt, com, size: [box.width, box.height], at: windowAt || [window.screenX, window.screenY] });
+  const spread = map ? (map.spread * box.height) / map.h : box.height / 4;
+  Swing.grab(swing, { pivot: grabbedAt, com, spread, size: [box.width, box.height], at: windowAt || [window.screenX, window.screenY] });
   petEl.style.setProperty('--pivot-x', `${grabbedAt[0]}px`);
   petEl.style.setProperty('--pivot-y', `${grabbedAt[1]}px`);
   petEl.classList.add('held');
