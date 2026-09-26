@@ -1,8 +1,32 @@
 # DeepSeek-Pet
 
+[![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-D97757)](https://claude.com/claude-code)
+[![Art by ChatGPT](https://img.shields.io/badge/Art_by-ChatGPT-10A37F)](https://chatgpt.com)
+[![Release](https://img.shields.io/github/v/release/HuaiYue1/DeepSeek-Pet)](https://github.com/HuaiYue1/DeepSeek-Pet/releases/latest)
+
 一只以 DeepSeek 为原型的桌面宠物：鲸鱼娘 DeepSeek-Pet，外号大肥鱼。
 
+**这是一个 AI 编程作品。** 仓库里的每一行代码都是 AI 编程工具 [Claude Code](https://claude.com/claude-code) 写的，立绘是 ChatGPT 画的。作者一行代码也没写，只负责出主意、生图、挑图、试用和提意见。从第一版草图到 v1.0.0 发布，前后不到一天。
+
 ![DeepSeek-Pet 角色设定图](art/character-sheet.png)
+
+## AI 编程
+
+整个项目是在和 Claude Code 的对话里做出来的：人说想要什么、哪里不满意，AI 写代码、测试、提交、打包、发布。
+
+| 谁 | 做了什么 |
+| --- | --- |
+| 作者 | 出主意，给参考图，用 ChatGPT 按提示词生图，试用，提意见 |
+| Claude Code | 设计角色，写出图提示词；写桌宠程序（Electron）、拖动的物理模拟、对齐立绘和写字的脚本；在虚拟屏幕里跑测试；搭 GitHub Actions 打包发布；写文档 |
+| ChatGPT | 按提示词画出 9 个状态的立绘 |
+
+几个来回的例子：
+
+- **「能不能做一个 DeepSeek 大肥鱼形象的桌面宠物？」** AI 先自己画了两版矢量立绘，作者都不满意，要和参考图一样的画风。于是 AI 写好提示词，作者用 ChatGPT 按参考图的画风出图，AI 再用脚本统一身高、按脚底对齐，把「服务器繁忙」「嗯，用户说……」这些梗写进牌子和思考泡泡。
+- **「我的屏幕是 4K 的，图片够清楚吗？」** 作者用 ChatGPT 出了一组高清透明图，AI 把它们接进出图流程，还加了「特大」档。
+- **「挪宠物的时候感觉动作不太真实」** AI 把拖动时固定的摆动动画换成物理模拟（[`app/swing.js`](app/swing.js)）：先离线模拟调参数，再在虚拟屏幕里用真实的鼠标事件测摆动、落地，以及她会不会被窗口边缘切掉。
+
+每个提交都是 AI 写的，提交信息末尾有 Claude 的署名（`Co-Authored-By`），整个过程可以在[提交记录](https://github.com/HuaiYue1/DeepSeek-Pet/commits/main)里一步步看到。
 
 ## 下载
 
