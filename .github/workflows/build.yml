@@ -1,11 +1,16 @@
 name: build
 
-# Packages the desktop pet for Windows and macOS. The installers show up as
-# downloadable artifacts on the workflow run page. release.yml reuses this to
-# build a release.
+# Packages the desktop pet for Windows and macOS; the installers show up as
+# artifacts on the run page.
+#
+# To publish a release: bump the version in package.json, update
+# .github/release-notes.md, then push a matching tag (v1.2.3) or run this
+# workflow by hand with "release" ticked. The release job tags the commit
+# and publishes the installers as a GitHub release.
 on:
   push:
     branches: ['**']
+    tags: ['v*']
     paths:
       - 'app/**'
       - 'art/png/**'
@@ -14,7 +19,11 @@ on:
       - 'package-lock.json'
       - '.github/workflows/build.yml'
   workflow_dispatch:
-  workflow_call:
+    inputs:
+      release:
+        description: Publish a GitHub release for the version in package.json
+        type: boolean
+        default: false
 
 jobs:
   package:
@@ -41,3 +50,27 @@ jobs:
             dist/*.exe
             dist/*.dmg
           if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag' || inputs.release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(jq -r .version package.json)"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$tag" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version in package.json ($tag)"
+            exit 1
+          fi
+          ls -l dist
+          gh release create "$tag" dist/DeepSeek-Pet-* --target "$GITHUB_SHA" --title "DeepSeek-Pet $tag" --notes-file .github/release-notes.md

@@ -45,7 +45,7 @@ npm start
 
 每次推送后 GitHub Actions 都会打包，在 **Actions → build** 的运行页面底部 Artifacts 里能下到还没发布的版本。
 
-要发布到 Releases：改 `package.json` 里的 `version`，把这一版的说明写进 [`.github/release-notes.md`](.github/release-notes.md)，然后推一个同名的 tag（比如 `v1.0.1`）。**release** 工作流会打包 Windows 和 macOS 版并发布。
+要发布到 Releases：改 `package.json` 里的 `version`，把这一版的说明写进 [`.github/release-notes.md`](.github/release-notes.md)，然后推一个同名的 tag（比如 `v1.0.1`），或者在 **Actions → build** 里点 **Run workflow** 并勾选 release。它会打好 Windows 和 macOS 版，打上 tag 并发布。
 
 ## 目录
 
