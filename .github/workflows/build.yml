@@ -1,7 +1,7 @@
 name: build
 
-# Packages the desktop pet for Windows and macOS; the installers show up as
-# artifacts on the run page.
+# Packages the desktop pet for Windows and macOS on every pull request and
+# every push to main; the installers show up as artifacts on the run page.
 #
 # To publish a release: bump the version in package.json, update
 # .github/release-notes.md, then push a matching tag (v1.2.3) or run this
@@ -9,15 +9,9 @@ name: build
 # and publishes the installers as a GitHub release.
 on:
   push:
-    branches: ['**']
+    branches: [main]
     tags: ['v*']
-    paths:
-      - 'app/**'
-      - 'art/png/**'
-      - 'art/states.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/build.yml'
+  pull_request:
   workflow_dispatch:
     inputs:
       release:
@@ -26,6 +20,9 @@ on:
         default: false
 
 jobs:
+  # "package (windows-latest)" and "package (macos-latest)" must pass before a
+  # pull request can merge into main (repository ruleset); renaming the job or
+  # the matrix means updating the ruleset too.
   package:
     strategy:
       fail-fast: false
