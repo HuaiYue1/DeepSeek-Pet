@@ -70,7 +70,8 @@
       "icon": "app/icon.png",
       "category": "public.app-category.entertainment",
       "artifactName": "DeepSeekPet-${version}-${arch}.${ext}",
-      "identity": "-"
+      "identity": "-",
+      "hardenedRuntime": false
     },
     "linux": {
       "target": [
