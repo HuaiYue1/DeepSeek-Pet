@@ -108,6 +108,8 @@ function createWindow() {
   if (!isLinux) win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(here, 'index.html'));
   win.once('ready-to-show', () => win.showInactive());
+  // if the mouse-up got lost, stop following the cursor once she loses focus
+  win.on('blur', finishDrag);
   win.on('moved', () => {
     [settings.x, settings.y] = win.getPosition();
     saveSettings();
@@ -202,9 +204,22 @@ ipcMain.on('pet:menu', () => contextMenu().popup({ window: win }));
 
 // Dragging follows the cursor from here, so it keeps up even when the
 // pointer runs ahead of the window. Small moves count as a click.
+function finishDrag() {
+  if (!drag) return false;
+  clearInterval(drag.timer);
+  const { moved } = drag;
+  drag = null;
+  if (moved) {
+    [settings.x, settings.y] = win.getPosition();
+    saveSettings();
+  }
+  return moved;
+}
+
 ipcMain.on('pet:drag-start', () => {
+  finishDrag();
   const cursor = screen.getCursorScreenPoint();
-  const [x, y] = win.getPosition();
+  const { x, y, width, height } = win.getBounds();
   drag = { cursor, x, y, moved: false };
   drag.timer = setInterval(() => {
     const p = screen.getCursorScreenPoint();
@@ -215,21 +230,13 @@ ipcMain.on('pet:drag-start', () => {
       drag.moved = true;
       send({ type: 'drag-begin' });
     }
-    win.setPosition(Math.round(drag.x + dx), Math.round(drag.y + dy));
+    // setBounds rather than setPosition: on Windows with fractional scaling
+    // repeated setPosition calls make the window creep bigger
+    win.setBounds({ x: Math.round(drag.x + dx), y: Math.round(drag.y + dy), width, height });
   }, 16);
 });
 
-ipcMain.handle('pet:drag-end', () => {
-  if (!drag) return { moved: false };
-  clearInterval(drag.timer);
-  const { moved } = drag;
-  drag = null;
-  if (moved) {
-    [settings.x, settings.y] = win.getPosition();
-    saveSettings();
-  }
-  return { moved };
-});
+ipcMain.handle('pet:drag-end', () => ({ moved: finishDrag() }));
 
 // ---------------------------------------------------------------- app
 
