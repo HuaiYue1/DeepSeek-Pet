@@ -1,4 +1,4 @@
-// 深深's behaviour: which sprite to show, what she says and how she reacts.
+// DeepSeek-Pet's behaviour: which sprite to show, what she says and how she reacts.
 'use strict';
 
 const $ = (id) => document.getElementById(id);

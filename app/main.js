@@ -1,4 +1,4 @@
-// 深深桌宠 — Electron main process.
+// DeepSeek-Pet — Electron main process.
 //
 // One small frameless, transparent, always-on-top window holds the pet and
 // her speech bubble. The window ignores the mouse except over her own
@@ -94,7 +94,7 @@ function createWindow() {
     hasShadow: false,
     alwaysOnTop: settings.onTop,
     show: false,
-    title: '深深',
+    title: 'DeepSeek-Pet',
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),
       contextIsolation: true,
@@ -177,7 +177,7 @@ function contextMenu() {
 function createTray() {
   const icon = nativeImage.createFromPath(path.join(here, 'tray.png'));
   tray = new Tray(icon);
-  tray.setToolTip('深深');
+  tray.setToolTip('DeepSeek-Pet');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: '显示 / 隐藏', click: toggleVisible },
     { label: '说点什么', click: () => send({ type: 'say' }) },

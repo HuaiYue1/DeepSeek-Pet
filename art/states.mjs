@@ -1,5 +1,5 @@
 // The pet's states: one sprite each in art/png/<key>.png.
-// `line` is what 深深 says in that state; `use` is when the pet shows it.
+// `line` is what she says in that state; `use` is when the pet shows it.
 export const STATES = {
   hello: { name: '打招呼', line: '我是 DeepSeek，很高兴见到你！', use: '启动、鼠标悬停' },
   idle: { name: '待机', line: '有什么可以帮你的吗？', use: '默认状态' },
@@ -13,7 +13,7 @@ export const STATES = {
 
 // Extra lines the pet picks from at random, besides each state's `line`.
 export const MORE_LINES = {
-  hello: ['今天想聊点什么？', '深深来陪你摸鱼啦～', '有问题尽管问，我先深度思考一下！'],
+  hello: ['今天想聊点什么？', '我来陪你摸鱼啦～', '有问题尽管问，我先深度思考一下！'],
   idle: ['要不要问我点问题？', '……（发呆中）', '我在，随时待命～'],
   think: ['等等，让我再想想……', '先把问题拆解一下……', '嗯，这个问题有点意思……'],
   busy: ['请求太多啦，排队中……', '人好多，我先喘口气……', '服务器繁忙，请稍后再试……真的！'],
@@ -23,8 +23,15 @@ export const MORE_LINES = {
   sleep: ['Zzz……128K……上下文……', '让我再睡五分钟……', '错峰时段，打个盹……'],
 };
 
+// The art/cut canvas size that OVERLAYS and ICONS were measured on; they
+// scale with the actual sprite size.
+export const ART_CANVAS = [341, 644];
+
+// App and tray icons cut from her face in the hello sprite: [x, y, side].
+export const ICONS = { app: [70, 35, 210], tray: [92, 62, 160] };
+
 // Text written onto the blank sign and thought bubble of the AI art.
-// box is [x, y, width, height] on the art/cut canvas; lines are [text, font size].
+// box is [x, y, width, height] on ART_CANVAS; lines are [text, font size].
 export const OVERLAYS = {
   busy: { box: [104, 222, 118, 74], lines: [['服务器繁忙', 19], ['请稍后再试。', 12]] },
   think: { box: [39, 30, 81, 70], lines: [['嗯，', 14], ['用户说……', 14]] },

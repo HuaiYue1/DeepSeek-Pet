@@ -1,4 +1,4 @@
-# 深深 · 立绘与状态图
+# DeepSeek-Pet · 立绘与状态图
 
 ![角色设定图](character-sheet.png)
 
@@ -8,7 +8,7 @@
 
 | 项目 | 设定 |
 | --- | --- |
-| 名字 | 深深（DeepSeek 娘） |
+| 名字 | DeepSeek-Pet（DeepSeek 娘） |
 | 外号 | 大肥鱼（本人坚决不认） |
 | 物种 | 鲸鱼娘 · 体重 671B |
 | 干活 | MoE，每次只用 37B 的力气 |
@@ -54,6 +54,16 @@
 | `prompts.md` | AI 绘图提示词（ChatGPT 和其他工具） |
 | `cutout.py` | 拆图、去背景、对齐脚本 |
 | `build.mjs`、`sheet.mjs` | 写字、排设定图的脚本 |
+
+## 换成高清素材
+
+高清素材是已经去好背景的透明 PNG，每个状态一张，文件名用状态的 key（`hello.png`、`idle.png`……）。放进 `art/raw/hd/` 后：
+
+```bash
+python art/cutout.py art/raw/hd/*.png --normalize --out art/cut
+```
+
+`--normalize` 会把各张图缩放到同一身高（最高 1300 像素），再按脚底对齐。之后按图里牌子和思考泡泡的新位置更新 `states.mjs` 里的 `ART_CANVAS`、`OVERLAYS` 和 `ICONS`，再运行 `npm run art`。
 
 ## 重新出图
 

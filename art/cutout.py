@@ -1,15 +1,16 @@
 """Cut the character out of AI-generated art and line the expressions up.
 
-The AI images come on a plain white background. This removes it and keeps
-the little effects drawn around her (hearts, "!", Zzz, thought bubbles),
-cleans the white fringe off the edges and puts every expression on one
-canvas, anchored at her feet, so the desktop pet can swap between them
-without the character jumping around.
+Images on a plain white background get it removed, keeping the little
+effects drawn around her (hearts, "!", Zzz, thought bubbles) and cleaning
+the white fringe off the edges. Images that are already transparent are
+used as they are. Every expression then goes on one canvas, anchored at
+her feet, so the desktop pet can swap between them without the character
+jumping around.
 
     pip install onnxruntime numpy pillow scipy
 
-    # one image per expression
-    python art/cutout.py art/raw/hello.png art/raw/idle.png ...
+    # one image per expression; --normalize scales them to the same body height
+    python art/cutout.py art/raw/hd/*.png --normalize
 
     # or a sheet with several expressions in a grid
     python art/cutout.py art/raw/sheet.png --grid 4x2 --names hello,idle,think,busy,happy,aha,eat,sleep
@@ -131,6 +132,34 @@ def split_grid(rgb, cols, rows):
     return figures
 
 
+def is_cut_out(im):
+    """True for images that already have a transparent background."""
+    if im.mode not in ("RGBA", "LA", "PA") and not (im.mode == "P" and "transparency" in im.info):
+        return False
+    return (np.asarray(im.convert("RGBA"))[..., 3] < 250).mean() > 0.05
+
+
+def body_mask(alpha):
+    """Her body: the largest solid blob, without the effects floating around her."""
+    solid = alpha > 0.5
+    labels, n = ndimage.label(solid)
+    if n < 2:
+        return solid
+    sizes = ndimage.sum(solid, labels, range(1, n + 1))
+    return labels == int(np.argmax(sizes)) + 1
+
+
+def resize_rgba(im, size):
+    """Resize with premultiplied alpha, so edges don't pick up the colour of transparent pixels."""
+    a = np.asarray(im, dtype=np.float32) / 255
+    premul = np.dstack([a[..., :3] * a[..., 3:], a[..., 3:]])
+    chans = [Image.fromarray(premul[..., i]).resize(size, Image.LANCZOS) for i in range(4)]
+    out = np.dstack([np.asarray(c, dtype=np.float32) for c in chans]).clip(0, 1)
+    alpha = out[..., 3:]
+    rgb = np.where(alpha > 1e-4, out[..., :3] / np.maximum(alpha, 1e-4), 0)
+    return Image.fromarray((np.dstack([rgb, alpha]).clip(0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
+
+
 def feet_anchor(a_model):
     """(x, y) between her feet: the bottom of the body, centred on the shoes."""
     body = a_model > 0.5
@@ -148,27 +177,54 @@ def main():
     ap.add_argument("--grid", help="split each image into COLSxROWS figures, e.g. 4x2")
     ap.add_argument("--names", help="comma-separated output names for the grid cells, row by row")
     ap.add_argument("--nudge", action="append", default=[], help="NAME:DX,DY to shift one figure on the canvas")
+    ap.add_argument("--normalize", action="store_true", help="scale every figure to the same body height")
+    ap.add_argument("--max-body", type=int, default=1300, help="with --normalize: largest body height in pixels")
     args = ap.parse_args()
 
     sources = []
     for path in args.images:
-        rgb = Image.open(path).convert("RGB")
+        im = Image.open(path)
         if args.grid:
             cols, rows = (int(v) for v in args.grid.lower().split("x"))
             names = args.names.split(",") if args.names else [f"{path.stem}-{i + 1}" for i in range(cols * rows)]
-            sources += [(name, fig) for name, fig in zip(names, split_grid(rgb, cols, rows)) if fig is not None]
+            figures = split_grid(im.convert("RGB"), cols, rows)
+            sources += [(name, fig) for name, fig in zip(names, figures) if fig is not None]
         else:
-            sources.append((path.stem, rgb))
+            sources.append((path.stem, im.convert("RGBA") if is_cut_out(im) else im.convert("RGB")))
 
-    session = load_model()
+    session = None
+    figures = []
+    for name, im in sources:
+        if im.mode == "RGBA":
+            rgba = im
+            body = body_mask(np.asarray(im, dtype=np.float32)[..., 3] / 255)
+            print(f"{name}: already transparent")
+        else:
+            session = session or load_model()
+            rgba, a_model = cut(session, im)
+            body = a_model > 0.5
+            print(f"{name}: background removed")
+        figures.append([name, rgba, body])
+
+    # separately generated images come at different scales: bring them to one body height
+    if args.normalize:
+        heights = {name: int(np.ptp(np.nonzero(body.any(axis=1))[0])) + 1 for name, _, body in figures}
+        target = min(float(np.median(list(heights.values()))), args.max_body)
+        for fig in figures:
+            name, im, body = fig
+            k = target / heights[name]
+            if abs(k - 1) > 0.002:
+                size = (max(1, round(im.width * k)), max(1, round(im.height * k)))
+                fig[1] = resize_rgba(im, size)
+                fig[2] = np.asarray(Image.fromarray(body.astype(np.uint8) * 255).resize(size, Image.BILINEAR)) > 127
+            print(f"{name}: body {heights[name]}px, scaled x{k:.3f}")
+
     nudges = {k: tuple(float(v) for v in d.split(",")) for k, d in (n.split(":") for n in args.nudge)}
     cuts = []
-    for name, rgb in sources:
-        rgba, a_model = cut(session, rgb)
-        ax, ay = feet_anchor(a_model)
+    for name, rgba, body in figures:
+        ax, ay = feet_anchor(body)
         dx, dy = nudges.get(name, (0, 0))
         cuts.append((name, rgba, ax - dx, ay - dy))
-        print(f"cut {name}")
 
     # one canvas for all, every figure placed with its feet on the same spot
     left = max(ax for _, _, ax, _ in cuts)

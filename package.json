@@ -2,7 +2,7 @@
   "name": "deepseek-pet",
   "version": "0.1.0",
   "private": true,
-  "description": "深深（大肥鱼）— a DeepSeek-inspired whale-girl desktop pet",
+  "description": "DeepSeek-Pet（大肥鱼）— a DeepSeek-inspired whale-girl desktop pet",
   "author": "HuaiYue",
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "io.github.huaiyue1.deepseek-pet",
-    "productName": "DeepSeekPet",
+    "productName": "DeepSeek-Pet",
     "files": [
       "app/**/*",
       "art/png/*.png",
@@ -51,11 +51,11 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "深深桌宠",
-      "artifactName": "DeepSeekPet-Setup-${version}.${ext}"
+      "shortcutName": "DeepSeek-Pet",
+      "artifactName": "DeepSeek-Pet-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "DeepSeekPet-${version}-portable.${ext}"
+      "artifactName": "DeepSeek-Pet-${version}-portable.${ext}"
     },
     "mac": {
       "target": [
@@ -69,7 +69,7 @@
       ],
       "icon": "app/icon.png",
       "category": "public.app-category.entertainment",
-      "artifactName": "DeepSeekPet-${version}-${arch}.${ext}",
+      "artifactName": "DeepSeek-Pet-${version}-${arch}.${ext}",
       "identity": "-",
       "hardenedRuntime": false
     },

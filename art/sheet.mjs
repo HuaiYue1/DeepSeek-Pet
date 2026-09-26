@@ -1,9 +1,9 @@
-// Character sheet (角色设定图) for 深深, laid out as an 1800x1200 HTML page.
+// Character sheet (角色设定图) for DeepSeek-Pet, laid out as an 1800x1200 HTML page.
 // `sprite(key)` gives the URL of a state's PNG.
 import { STATES } from './states.mjs';
 
 const PROFILE = [
-  ['名字', '深深（DeepSeek 娘）'],
+  ['名字', 'DeepSeek-Pet（DeepSeek 娘）'],
   ['外号', '大肥鱼（本人坚决不认）'],
   ['物种', '鲸鱼娘 · 体重 671B'],
   ['干活', 'MoE，每次只用 37B 的力气'],
@@ -57,7 +57,7 @@ export function characterSheetHTML({ fontCSS = '', sprite }) {
   }).join('');
 
   return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>深深 · 角色设定</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>DeepSeek-Pet · 角色设定</title>
 <style>
 ${fontCSS}
 :root { --blue: #4D6BFE; --line: #1B2266; --muted: #5C6394; }
@@ -91,8 +91,8 @@ body {
 .say em { font-style: normal; color: var(--blue); }
 .name { position: absolute; left: 36px; bottom: 44px; }
 .name h1 {
-  font-size: 104px; line-height: 1; color: var(--blue); letter-spacing: 4px;
-  -webkit-text-stroke: 9px #fff; paint-order: stroke fill; text-shadow: 0 9px 0 rgba(35,53,166,.18);
+  font-size: 66px; line-height: 1; color: var(--blue); letter-spacing: 1px;
+  -webkit-text-stroke: 8px #fff; paint-order: stroke fill; text-shadow: 0 9px 0 rgba(35,53,166,.18);
 }
 .name p { margin-top: 10px; font-size: 16px; font-weight: 700; letter-spacing: 4px; }
 .name p i { font-style: normal; background: var(--line); color: #fff; padding: 2px 10px; border-radius: 6px; letter-spacing: 2px; margin-left: 6px; }
@@ -135,7 +135,7 @@ body {
     <img class="girl" src="${sprite('hello')}">
     <div class="tag"><b>No.001</b><span>DeepSeek 娘</span></div>
     <div class="say cute">我是 <em>DeepSeek</em>，很高兴见到你！<svg class="tip" width="50" height="38" viewBox="0 0 50 38"><path d="M2 0 L34 38 L42 0" fill="#fff" stroke="#1B2266" stroke-width="4" stroke-linejoin="round"/><rect x="0" y="0" width="50" height="3.5" fill="#fff"/></svg></div>
-    <div class="name"><h1 class="cute">深深</h1><p>DEEPSEEK 娘<i>外号 大肥鱼</i></p></div>
+    <div class="name"><h1 class="cute">DeepSeek-Pet</h1><p>DEEPSEEK 娘<i>外号 大肥鱼</i></p></div>
   </section>
   <section class="side">
     <div class="head"><h2 class="cute">角色设定</h2><p>CHARACTER SHEET</p><span class="ver">立绘 v1.0 · 状态 ×${Object.keys(STATES).length}</span></div>

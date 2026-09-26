@@ -9,7 +9,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
-import { STATES, OVERLAYS } from './states.mjs';
+import { STATES, OVERLAYS, ART_CANVAS, ICONS } from './states.mjs';
 import { characterSheetHTML } from './sheet.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -41,10 +41,11 @@ async function openPage(browser, html, name, viewport) {
 }
 
 function spriteHTML(src, size, overlay) {
+  const k = size[1] / ART_CANVAS[1];
   const text = overlay
     ? (() => {
-        const [x, y, w, h] = overlay.box;
-        const lines = overlay.lines.map(([t, s], i) => `<div style="font-size:${s}px;${i ? 'color:#4A5288' : ''}">${t}</div>`).join('');
+        const [x, y, w, h] = overlay.box.map((v) => v * k);
+        const lines = overlay.lines.map(([t, s], i) => `<div style="font-size:${s * k}px;${i ? 'color:#4A5288' : ''}">${t}</div>`).join('');
         return `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;color:${INK};font-family:'ZCOOL KuaiLe','Noto Sans SC',sans-serif;white-space:nowrap">${lines}</div>`;
       })()
     : '';
@@ -75,13 +76,16 @@ async function main() {
 
   // app icons cut from her face in the hello sprite
   const appDir = path.join(here, '..', 'app');
-  const hello = pathToFileURL(path.join(pngDir, 'hello.png')).href;
-  for (const [file, px, crop, round] of [['icon.png', 512, [70, 35, 210], 0.22], ['tray.png', 32, [92, 62, 160], 0.5], ['tray@2x.png', 64, [92, 62, 160], 0.5]]) {
-    const [cx, cy, side] = crop;
+  const helloFile = path.join(pngDir, 'hello.png');
+  const hello = pathToFileURL(helloFile).href;
+  const [spriteW] = pngSize(helloFile);
+  const unit = spriteW / ART_CANVAS[0];
+  for (const [file, px, crop, round] of [['icon.png', 512, ICONS.app, 0.22], ['tray.png', 32, ICONS.tray, 0.5], ['tray@2x.png', 64, ICONS.tray, 0.5]]) {
+    const [cx, cy, side] = crop.map((v) => v * unit);
     const k = px / side;
     const bg = round < 0.5 ? 'linear-gradient(160deg,#EEF2FF,#B4C3FF)' : '#E8EDFF';
     const icon = `<!doctype html><body style="margin:0;width:${px}px;height:${px}px"><div style="width:${px}px;height:${px}px;border-radius:${px * round}px;overflow:hidden;background:${bg};position:relative">
-      <img src="${hello}" style="position:absolute;left:${-cx * k}px;top:${-cy * k}px;width:${341 * k}px"></div></body>`;
+      <img src="${hello}" style="position:absolute;left:${-cx * k}px;top:${-cy * k}px;width:${spriteW * k}px"></div></body>`;
     const page = await openPage(browser, icon, `icon-${px}`, { width: px, height: px });
     await page.screenshot({ path: path.join(appDir, file), omitBackground: true });
     await page.close();

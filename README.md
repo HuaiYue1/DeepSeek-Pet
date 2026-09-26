@@ -1,20 +1,20 @@
-# DeepSeek-Pet · 深深桌宠
+# DeepSeek-Pet
 
-一只以 DeepSeek 为原型的桌面宠物：鲸鱼娘「深深」，外号大肥鱼。
+一只以 DeepSeek 为原型的桌面宠物：鲸鱼娘 DeepSeek-Pet，外号大肥鱼。
 
-![深深角色设定图](art/character-sheet.png)
+![DeepSeek-Pet 角色设定图](art/character-sheet.png)
 
 ## 下载
 
 每次推送后 GitHub Actions 会自动打包。打开仓库的 **Actions → build**，点进最近一次成功的运行，在页面底部的 Artifacts 里下载：
 
-- **DeepSeekPet-Windows**：`DeepSeekPet-Setup-*.exe` 是安装版，`DeepSeekPet-*-portable.exe` 是免安装版，双击就能用。
-- **DeepSeekPet-macOS**：`*-arm64.dmg` 给 M 系列芯片，`*-x64.dmg` 给 Intel 芯片。
+- **DeepSeek-Pet-Windows**：`DeepSeek-Pet-Setup-*.exe` 是安装版，`DeepSeek-Pet-*-portable.exe` 是免安装版，双击就能用。
+- **DeepSeek-Pet-macOS**：`*-arm64.dmg` 给 M 系列芯片，`*-x64.dmg` 给 Intel 芯片。
 
 安装包没有做代码签名：
 
 - **Windows**：弹出「Windows 已保护你的电脑」时，点「更多信息 → 仍要运行」。
-- **macOS**：第一次右键点 App 选「打开」。如果提示「已损坏」，在终端执行 `xattr -cr /Applications/DeepSeekPet.app`。
+- **macOS**：第一次右键点 App 选「打开」。如果提示「已损坏」，在终端执行 `xattr -cr /Applications/DeepSeek-Pet.app`。
 
 ## 从源码运行
 
