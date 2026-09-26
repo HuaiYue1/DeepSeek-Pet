@@ -15,16 +15,9 @@ const PROFILE = [
   ['弱点', '人一多就「服务器繁忙」'],
 ];
 
-const MEMES = [
-  ['服务器繁忙，请稍后再试。', '举牌'],
-  ['嗯，用户说……', '思考泡泡'],
-  ['已深度思考（用时 32 秒）', '思考中'],
-  ['等等，我好像悟了', 'aha moment'],
-  ['Token 便宜又大碗', '吃 Token'],
-  ['夜间错峰优惠', '睡觉'],
-];
+const MEMES = ['服务器繁忙，请稍后再试。', '嗯，用户说……', '已深度思考（用时 32 秒）', 'aha moment', '671B / 37B', '128K 上下文', 'MIT 开源', '夜间错峰优惠'];
 
-const GRID = ['idle', 'think', 'busy', 'happy', 'aha', 'eat', 'sleep'];
+const GRID = ['idle', 'think', 'busy', 'happy', 'aha', 'eat', 'sleep', 'sideeye'];
 
 function sparkle(x, y, s, fill) {
   const k = s * 0.26;
@@ -46,7 +39,7 @@ function heroDecor() {
 
 export function characterSheetHTML({ fontCSS = '', sprite }) {
   const profile = PROFILE.map(([k, v]) => `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
-  const memes = MEMES.map(([t, w]) => `<li><span>${t}</span><em>${w}</em></li>`).join('');
+  const memes = MEMES.map((t) => `<span>${t}</span>`).join('');
   const cards = GRID.map((key) => {
     const s = STATES[key];
     return `<div class="card">
@@ -79,7 +72,7 @@ body {
   box-shadow: 0 24px 60px rgba(35,53,166,.20), inset 0 0 0 4px rgba(255,255,255,.7);
 }
 .hero .decor { position: absolute; inset: 0; }
-.hero .girl { position: absolute; left: 50%; top: 178px; width: 402px; transform: translateX(-50%); }
+.hero .girl { position: absolute; left: 50%; top: 168px; width: 500px; transform: translateX(-50%); }
 .hero .tag { position: absolute; right: 30px; top: 34px; display: flex; gap: 8px; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
 .hero .tag b { background: var(--line); color: #fff; padding: 5px 13px; border-radius: 999px; }
 .hero .tag span { background: #fff; padding: 5px 13px; border-radius: 999px; box-shadow: 0 4px 12px rgba(35,53,166,.12); }
@@ -111,7 +104,7 @@ body {
 .row .k { flex: none; width: 72px; text-align: center; padding: 3px 0; border-radius: 999px; background: #E8EDFF; font-weight: 700; font-size: 15px; }
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .card { background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(35,53,166,.10); }
-.card .pic { position: relative; height: 272px; overflow: hidden; background: linear-gradient(180deg, #F4F6FF, #DCE3FF); }
+.card .pic { position: relative; height: 254px; overflow: hidden; background: linear-gradient(180deg, #F4F6FF, #DCE3FF); }
 .card .pic img { display: block; width: 100%; }
 .badge {
   position: absolute; right: 8px; bottom: 10px; display: flex; align-items: center; gap: 5px;
@@ -123,11 +116,9 @@ body {
 .card .label span { font-family: 'ZCOOL KuaiLe', sans-serif; font-size: 24px; }
 .card .label small { font-size: 12.5px; color: var(--muted); letter-spacing: 1px; }
 .card .quote { padding: 0 16px 14px; font-size: 13.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.memes { padding: 18px 20px; }
-.memes h3 { margin-bottom: 10px; }
-.memes ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-.memes li { display: flex; flex-direction: column; font-size: 14px; line-height: 1.3; font-weight: 700; }
-.memes li em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--muted); }
+.memes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed #D6DDFB; }
+.memes b { font-family: 'ZCOOL KuaiLe', sans-serif; font-weight: 400; font-size: 18px; margin-right: 4px; }
+.memes span { padding: 3px 11px; border-radius: 999px; background: #F1F4FF; border: 1.5px solid #D6DDFB; font-size: 13.5px; font-weight: 700; }
 </style></head>
 <body><div class="sheet">
   <section class="hero">
@@ -138,9 +129,9 @@ body {
     <div class="name"><h1 class="cute">DeepSeek-Pet</h1><p>DEEPSEEK 娘<i>外号 大肥鱼</i></p></div>
   </section>
   <section class="side">
-    <div class="head"><h2 class="cute">角色设定</h2><p>CHARACTER SHEET</p><span class="ver">立绘 v1.0 · 状态 ×${Object.keys(STATES).length}</span></div>
-    <div class="panel"><h3 class="cute">基础档案</h3><div class="profile">${profile}</div></div>
-    <div class="grid">${cards}<div class="card memes"><h3 class="cute">DS 梗</h3><ul>${memes}</ul></div></div>
+    <div class="head"><h2 class="cute">角色设定</h2><p>CHARACTER SHEET</p><span class="ver">立绘 v2.0 高清版 · 状态 ×${Object.keys(STATES).length}</span></div>
+    <div class="panel"><h3 class="cute">基础档案</h3><div class="profile">${profile}</div><div class="memes"><b>DS 梗</b>${memes}</div></div>
+    <div class="grid">${cards}</div>
   </section>
 </div></body></html>`;
 }

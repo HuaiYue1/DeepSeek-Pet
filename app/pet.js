@@ -11,8 +11,9 @@ const badgeText = badge.querySelector('span');
 
 const NAP_AFTER = 120000; // ms without attention before she naps
 const NAP_AFTER_OFF_PEAK = 45000; // sooner during DeepSeek's 00:30–08:30 off-peak discount
-const BUSY_CLICKS = 5; // this many clicks within BUSY_WINDOW and she is "server busy"
-const BUSY_WINDOW = 2500;
+const POKE_WINDOW = 2500; // clicks this close together count as poking her
+const SIDEEYE_CLICKS = 3; // poked this many times she gives you a look
+const BUSY_CLICKS = 5; // ...and this many times she is "server busy"
 
 let states = {};
 let moreLines = {};
@@ -128,7 +129,8 @@ function ambient() {
   if (roll < 0.4) deepThink();
   else if (roll < 0.6) show('hello');
   else if (roll < 0.75) show('eat');
-  else if (roll < 0.85) show('busy', { ms: 3200 });
+  else if (roll < 0.83) show('busy', { ms: 3200 });
+  else if (roll < 0.9) show('sideeye', { ms: 3200 });
   else show('idle', { ms: 3600 });
 }
 
@@ -231,11 +233,13 @@ window.addEventListener('mouseup', async (e) => {
 
 function click() {
   const now = Date.now();
-  clicks = clicks.filter((t) => now - t < BUSY_WINDOW);
+  clicks = clicks.filter((t) => now - t < POKE_WINDOW);
   clicks.push(now);
   if (clicks.length >= BUSY_CLICKS) {
     clicks = [];
     show('busy', { line: states.busy.line, ms: 4200 });
+  } else if (clicks.length >= SIDEEYE_CLICKS) {
+    if (current !== 'sideeye') show('sideeye', { ms: 3200 });
   } else if (current !== 'busy') {
     show('happy', { ms: 3200 });
   }

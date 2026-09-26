@@ -13,9 +13,14 @@ import { STATES, MORE_LINES } from '../art/states.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spriteDir = path.join(here, '..', 'art', 'png');
 
-// Pet height in logical pixels. On a 4K screen at 150–200% scaling the
-// medium size uses about as many physical pixels as the sprites have.
-const SIZES = { small: { label: '小', height: 240 }, medium: { label: '中', height: 300 }, large: { label: '大', height: 380 } };
+// Pet height in logical pixels. The sprites are about 1300 px tall, enough
+// for the largest size on a 4K screen at 200% scaling.
+const SIZES = {
+  small: { label: '小', height: 240 },
+  medium: { label: '中', height: 300 },
+  large: { label: '大', height: 380 },
+  xlarge: { label: '特大', height: 480 },
+};
 const BUBBLE_ROOM = 72; // space above the sprite for the speech bubble
 const MIN_WIDTH = 300;
 

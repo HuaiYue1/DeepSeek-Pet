@@ -9,6 +9,7 @@ export const STATES = {
   aha: { name: '顿悟', line: '等等，我好像悟了！', use: '回复完成' },
   eat: { name: '吃 Token', line: 'Token 便宜又大碗，嗷呜！', use: '喂食互动' },
   sleep: { name: '睡觉', line: '夜间错峰优惠中……zzz', use: '长时间无操作' },
+  sideeye: { name: '无语', line: '……这题问过 128K 遍了。', use: '被连续戳' },
 };
 
 // Extra lines the pet picks from at random, besides each state's `line`.
@@ -21,18 +22,19 @@ export const MORE_LINES = {
   aha: ['这是一个 aha moment！', '诶？！', '我想明白了！'],
   eat: ['缓存命中，更香了！', '再来一个 Token～', '嗷呜，一口一个 Token！'],
   sleep: ['Zzz……128K……上下文……', '让我再睡五分钟……', '错峰时段，打个盹……'],
+  sideeye: ['……', '你认真的？', '答案就在上下文里哦……'],
 };
 
 // The art/cut canvas size that OVERLAYS and ICONS were measured on; they
 // scale with the actual sprite size.
-export const ART_CANVAS = [341, 644];
+export const ART_CANVAS = [908, 1337];
 
 // App and tray icons cut from her face in the hello sprite: [x, y, side].
-export const ICONS = { app: [70, 35, 210], tray: [92, 62, 160] };
+export const ICONS = { app: [210, 10, 480], tray: [284, 104, 330] };
 
 // Text written onto the blank sign and thought bubble of the AI art.
 // box is [x, y, width, height] on ART_CANVAS; lines are [text, font size].
 export const OVERLAYS = {
-  busy: { box: [104, 222, 118, 74], lines: [['服务器繁忙', 19], ['请稍后再试。', 12]] },
-  think: { box: [39, 30, 81, 70], lines: [['嗯，', 14], ['用户说……', 14]] },
+  busy: { box: [340, 412, 257, 161], lines: [['服务器繁忙', 38], ['请稍后再试。', 25]] },
+  think: { box: [31, 34, 239, 186], lines: [['嗯，', 34], ['用户说……', 34]] },
 };
