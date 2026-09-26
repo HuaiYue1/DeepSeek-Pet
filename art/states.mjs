@@ -11,6 +11,18 @@ export const STATES = {
   sleep: { name: '睡觉', line: '夜间错峰优惠中……zzz', use: '长时间无操作' },
 };
 
+// Extra lines the pet picks from at random, besides each state's `line`.
+export const MORE_LINES = {
+  hello: ['今天想聊点什么？', '深深来陪你摸鱼啦～', '有问题尽管问，我先深度思考一下！'],
+  idle: ['要不要问我点问题？', '……（发呆中）', '我在，随时待命～'],
+  think: ['等等，让我再想想……', '先把问题拆解一下……', '嗯，这个问题有点意思……'],
+  busy: ['请求太多啦，排队中……', '人好多，我先喘口气……', '服务器繁忙，请稍后再试……真的！'],
+  happy: ['被摸头了，嘿嘿～', '今天也是便宜又好用的一天！', '开源精神，发扬光大！'],
+  aha: ['这是一个 aha moment！', '诶？！', '我想明白了！'],
+  eat: ['缓存命中，更香了！', '再来一个 Token～', '嗷呜，一口一个 Token！'],
+  sleep: ['Zzz……128K……上下文……', '让我再睡五分钟……', '错峰时段，打个盹……'],
+};
+
 // Text written onto the blank sign and thought bubble of the AI art.
 // box is [x, y, width, height] on the art/cut canvas; lines are [text, font size].
 export const OVERLAYS = {

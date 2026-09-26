@@ -2,7 +2,7 @@
 //
 //   python art/cutout.py ...   -> art/cut/<state>.png   aligned, no text
 //   npm run art                -> art/png/<state>.png   with the meme text
-//                                 art/character-sheet.png
+//                                 art/character-sheet.png, app/icon.png, app/tray*.png
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -73,12 +73,26 @@ async function main() {
     await page.close();
   }
 
+  // app icons cut from her face in the hello sprite
+  const appDir = path.join(here, '..', 'app');
+  const hello = pathToFileURL(path.join(pngDir, 'hello.png')).href;
+  for (const [file, px, crop, round] of [['icon.png', 512, [70, 35, 210], 0.22], ['tray.png', 32, [92, 62, 160], 0.5], ['tray@2x.png', 64, [92, 62, 160], 0.5]]) {
+    const [cx, cy, side] = crop;
+    const k = px / side;
+    const bg = round < 0.5 ? 'linear-gradient(160deg,#EEF2FF,#B4C3FF)' : '#E8EDFF';
+    const icon = `<!doctype html><body style="margin:0;width:${px}px;height:${px}px"><div style="width:${px}px;height:${px}px;border-radius:${px * round}px;overflow:hidden;background:${bg};position:relative">
+      <img src="${hello}" style="position:absolute;left:${-cx * k}px;top:${-cy * k}px;width:${341 * k}px"></div></body>`;
+    const page = await openPage(browser, icon, `icon-${px}`, { width: px, height: px });
+    await page.screenshot({ path: path.join(appDir, file), omitBackground: true });
+    await page.close();
+  }
+
   const html = characterSheetHTML({ fontCSS: fontCSS(), sprite: (key) => pathToFileURL(path.join(pngDir, `${key}.png`)).href });
   const sheet = await openPage(browser, html, 'sheet', { width: 1800, height: 1200 });
   await sheet.screenshot({ path: path.join(here, 'character-sheet.png') });
 
   await browser.close();
-  console.log(`wrote ${states.length} sprites to ${pngDir} and character-sheet.png`);
+  console.log(`wrote ${states.length} sprites to ${pngDir}, app icons and character-sheet.png`);
 }
 
 main().catch((err) => {
