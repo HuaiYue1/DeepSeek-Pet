@@ -21,8 +21,12 @@ const SIZES = {
   large: { label: '大', height: 380 },
   xlarge: { label: '特大', height: 480 },
 };
-const BUBBLE_ROOM = 72; // space above the sprite for the speech bubble
-const MIN_WIDTH = 300;
+const BUBBLE_ROOM = 72; // space above her for the speech bubble
+const MIN_WIDTH = 340; // wide enough for the bubble
+// Room around her, in pet heights, so she isn't cut off when she swings
+// while carried.
+const SWING_ROOM = 0.26; // on each side
+const FLOOR_ROOM = 0.06; // below her feet
 
 const isMac = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';
@@ -64,7 +68,9 @@ function loadSprites() {
 function geometry(size = settings.size) {
   const petH = SIZES[size].height;
   const petW = Math.round((petH * spriteSize[0]) / spriteSize[1]);
-  return { petW, petH, width: Math.max(petW + 60, MIN_WIDTH), height: petH + BUBBLE_ROOM };
+  const floor = Math.round(petH * FLOOR_ROOM);
+  const width = Math.max(petW + 2 * Math.round(petH * SWING_ROOM), MIN_WIDTH);
+  return { petW, petH, floor, width, height: BUBBLE_ROOM + petH + floor };
 }
 
 // Keep the window on some screen, e.g. after a monitor was unplugged.
@@ -80,7 +86,7 @@ function createWindow() {
   const g = geometry();
   const area = screen.getPrimaryDisplay().workArea;
   const start = settings.x == null
-    ? { x: area.x + area.width - g.width - 40, y: area.y + area.height - g.height }
+    ? { x: area.x + area.width - g.width - 40, y: area.y + area.height - g.height + g.floor }
     : onScreen(settings.x, settings.y, g.width, g.height);
 
   win = new BrowserWindow({
@@ -114,8 +120,13 @@ function createWindow() {
   win.loadFile(path.join(here, 'index.html'));
   win.once('ready-to-show', () => win.showInactive());
   // if the mouse-up got lost, stop following the cursor once she loses focus
-  win.on('blur', finishDrag);
+  win.on('blur', () => {
+    if (!drag) return;
+    finishDrag();
+    send({ type: 'drag-end' });
+  });
   win.on('moved', () => {
+    if (drag) return; // saved when the drag ends
     [settings.x, settings.y] = win.getPosition();
     saveSettings();
   });
@@ -127,12 +138,13 @@ function send(command) {
 
 function resize(size) {
   const before = win.getBounds();
+  const old = geometry();
   const g = geometry(size);
   settings.size = size;
   // keep her feet where they were
   win.setBounds({
     x: Math.round(before.x + (before.width - g.width) / 2),
-    y: before.y + before.height - g.height,
+    y: before.y + before.height - old.floor - (g.height - g.floor),
     width: g.width,
     height: g.height,
   });
@@ -208,7 +220,9 @@ ipcMain.on('pet:ignore', (_e, ignore) => {
 ipcMain.on('pet:menu', () => contextMenu().popup({ window: win }));
 
 // Dragging follows the cursor from here, so it keeps up even when the
-// pointer runs ahead of the window. Small moves count as a click.
+// pointer runs ahead of the window. The renderer asks for a step every
+// animation frame, so the window moves in step with the screen; a timer
+// covers for it if frames stall. Small moves count as a click.
 function finishDrag() {
   if (!drag) return false;
   clearInterval(drag.timer);
@@ -221,24 +235,40 @@ function finishDrag() {
   return moved;
 }
 
+function follow() {
+  const p = screen.getCursorScreenPoint();
+  const dx = p.x - drag.cursor.x;
+  const dy = p.y - drag.cursor.y;
+  if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+  if (!drag.moved) {
+    drag.moved = true;
+    send({ type: 'drag-begin' });
+  }
+  const x = Math.round(drag.x + dx);
+  const y = Math.round(drag.y + dy);
+  if (x === drag.at[0] && y === drag.at[1]) return;
+  drag.at = [x, y];
+  // setBounds rather than setPosition: on Windows with fractional scaling
+  // repeated setPosition calls make the window creep bigger
+  win.setBounds({ x, y, width: drag.width, height: drag.height });
+}
+
 ipcMain.on('pet:drag-start', () => {
   finishDrag();
   const cursor = screen.getCursorScreenPoint();
   const { x, y, width, height } = win.getBounds();
-  drag = { cursor, x, y, moved: false };
+  drag = { cursor, x, y, width, height, at: [x, y], moved: false, tick: Date.now() };
   drag.timer = setInterval(() => {
-    const p = screen.getCursorScreenPoint();
-    const dx = p.x - drag.cursor.x;
-    const dy = p.y - drag.cursor.y;
-    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-    if (!drag.moved) {
-      drag.moved = true;
-      send({ type: 'drag-begin' });
-    }
-    // setBounds rather than setPosition: on Windows with fractional scaling
-    // repeated setPosition calls make the window creep bigger
-    win.setBounds({ x: Math.round(drag.x + dx), y: Math.round(drag.y + dy), width, height });
+    if (Date.now() - drag.tick > 100) follow();
   }, 16);
+});
+
+// returns where the window is now, for her swing
+ipcMain.handle('pet:drag-tick', () => {
+  if (!drag) return null;
+  drag.tick = Date.now();
+  follow();
+  return drag.at;
 });
 
 ipcMain.handle('pet:drag-end', () => ({ moved: finishDrag() }));

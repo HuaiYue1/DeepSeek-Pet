@@ -1,6 +1,7 @@
 :root {
   --pet-w: 159px;
   --pet-h: 300px;
+  --floor: 18px;
   --ink: #1B2266;
   --muted: #5C6394;
   --blue: #4D6BFE;
@@ -22,11 +23,23 @@ body {
 #pet {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: var(--floor);
   width: var(--pet-w);
   height: var(--pet-h);
   transform: translateX(-50%);
 }
+
+/* Three layers: #swing tilts her about the point you grabbed and #squash
+   squashes and stretches her (both set by pet.js, see swing.js), #sprite
+   runs the per-state animation. */
+#swing,
+#squash {
+  width: 100%;
+  height: 100%;
+}
+
+#swing { transform-origin: var(--pivot-x, 50%) var(--pivot-y, 50%); }
+#squash { transform-origin: 50% 100%; }
 
 #sprite {
   display: block;
@@ -36,11 +49,11 @@ body {
   animation: bob 3.2s ease-in-out infinite;
 }
 
-#pet.pop #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
-#pet.happy #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
-#pet.busy #sprite { animation: shake 0.24s linear infinite; }
-#pet.sleep #sprite { animation: breathe 3.6s ease-in-out infinite; }
-#pet.dragging #sprite { transform-origin: 50% 8%; animation: dangle 0.9s ease-in-out infinite; }
+#pet[data-state="pop"] #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
+#pet[data-state="happy"] #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
+#pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
+#pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
+#pet.held #sprite { animation: none; }
 
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
@@ -65,10 +78,6 @@ body {
   0%, 100% { transform: scale(1, 1); }
   50% { transform: scale(1.006, 0.985); }
 }
-@keyframes dangle {
-  0%, 100% { transform: rotate(-4deg); }
-  50% { transform: rotate(4deg); }
-}
 
 /* ---------------------------------------------------------------- bubble */
 
@@ -76,7 +85,7 @@ body {
 #bubble {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--pet-h) - 6px);
+  bottom: calc(var(--floor) + var(--pet-h) - 6px);
   box-sizing: border-box;
   max-width: 272px;
   padding: 9px 14px 10px;

@@ -3,6 +3,8 @@
 
 const $ = (id) => document.getElementById(id);
 const petEl = $('pet');
+const swingEl = $('swing');
+const squashEl = $('squash');
 const sprite = $('sprite');
 const bubble = $('bubble');
 const textEl = $('text');
@@ -83,10 +85,9 @@ function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = fal
   stop('back', 'think');
   current = key;
   sprite.src = sprites[key];
-  petEl.className = '';
+  petEl.dataset.state = '';
   void petEl.offsetWidth; // restart the CSS animation
-  petEl.className = ['happy', 'busy', 'sleep'].includes(key) ? key : 'pop';
-  if (dragging) petEl.classList.add('dragging');
+  petEl.dataset.state = ['happy', 'busy', 'sleep'].includes(key) ? key : 'pop';
   badge.classList.remove('show', 'done');
   if (!quiet) say(line ?? random(lines(key)), { ms: ms || 0, typing });
   if (ms && key !== then) later('back', ms, () => show(then, { quiet: true }));
@@ -158,8 +159,18 @@ function buildHitMap(key, url) {
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       const alpha = new Uint8Array(canvas.width * canvas.height);
-      for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
-      hitMaps[key] = { w: canvas.width, h: canvas.height, alpha };
+      let sx = 0, sy = 0, n = 0;
+      for (let i = 0; i < alpha.length; i++) {
+        alpha[i] = data[i * 4 + 3];
+        if (alpha[i] > 40) {
+          sx += i % canvas.width;
+          sy += Math.floor(i / canvas.width);
+          n += 1;
+        }
+      }
+      // her centre of mass, for how she hangs when picked up
+      const com = n ? [sx / n, sy / n] : [canvas.width / 2, canvas.height / 2];
+      hitMaps[key] = { w: canvas.width, h: canvas.height, alpha, com };
       resolve();
     };
     img.onerror = () => resolve();
@@ -168,12 +179,21 @@ function buildHitMap(key, url) {
 }
 
 function overPet(x, y) {
-  const r = sprite.getBoundingClientRect();
-  if (x < r.left || x >= r.right || y < r.top || y >= r.bottom) return false;
+  // standing, the sprite's own box (it bobs and hops); tilted, undo the tilt
+  let u, v;
+  if (Swing.resting(swing)) {
+    const r = sprite.getBoundingClientRect();
+    [u, v] = [(x - r.left) / r.width, (y - r.top) / r.height];
+  } else {
+    const box = petEl.getBoundingClientRect();
+    const [bx, by] = boxPoint(x, y);
+    [u, v] = [bx / box.width, by / box.height];
+  }
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return false;
   const map = hitMaps[current];
   if (!map) return true;
-  const px = Math.floor(((x - r.left) / r.width) * map.w);
-  const py = Math.floor(((y - r.top) / r.height) * map.h);
+  const px = Math.floor(u * map.w);
+  const py = Math.floor(v * map.h);
   // look a few pixels around so thin hair strands are easy to grab
   for (let dy = -4; dy <= 4; dy += 4) {
     for (let dx = -4; dx <= 4; dx += 4) {
@@ -210,25 +230,98 @@ document.addEventListener('mouseleave', () => {
   if (!pressed) setInteractive(false);
 });
 
+// ---------------------------------------------------------------- picked up
+
+// swing.js works out how she hangs, swings and lands; this draws it. The
+// pose runs on animation frames while the mouse is down or she is still
+// settling, and while the mouse is down each frame also has the main process
+// move the window after the mouse, so window and pose move in step.
+const swing = Swing.create();
+let framing = false;
+let lastFrame = 0;
+let windowAt = null; // where the main process last put the window
+let grabbedAt = [0, 0]; // where the mouse went down, in her box
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function drawPose() {
+  const p = Swing.pose(swing);
+  swingEl.style.transform = p.angle ? `rotate(${p.angle}rad)` : '';
+  squashEl.style.transform = p.sx !== 1 || p.tx || p.ty ? `translate(${p.tx}px, ${p.ty}px) scale(${p.sx}, ${p.sy})` : '';
+}
+
+function frame(now) {
+  const dt = clamp((now - lastFrame) / 1000, 0.001, 0.05);
+  lastFrame = now;
+  if (pressed) window.pet.dragTick().then((at) => { if (at) windowAt = at; });
+  Swing.step(swing, dt, windowAt);
+  drawPose();
+  if (pressed || !Swing.resting(swing)) requestAnimationFrame(frame);
+  else framing = false;
+}
+
+function animate() {
+  if (framing) return;
+  framing = true;
+  lastFrame = performance.now();
+  requestAnimationFrame(frame);
+}
+
+// A point in the window as a point in her own box, undoing her tilt and squash.
+function boxPoint(clientX, clientY) {
+  const box = petEl.getBoundingClientRect();
+  let x = clientX - box.left;
+  let y = clientY - box.top;
+  const p = Swing.pose(swing);
+  if (p.angle) {
+    const [ox, oy] = swing.pivot;
+    const c = Math.cos(p.angle);
+    const s = Math.sin(p.angle);
+    [x, y] = [ox + (x - ox) * c + (y - oy) * s, oy - (x - ox) * s + (y - oy) * c];
+  }
+  const [fx, fy] = [box.width / 2, box.height];
+  return [fx + (x - p.tx - fx) / p.sx, fy + (y - p.ty - fy) / p.sy];
+}
+
+function pickUp() {
+  dragging = true;
+  const box = petEl.getBoundingClientRect();
+  const map = hitMaps[current];
+  const com = map ? [(map.com[0] * box.width) / map.w, (map.com[1] * box.height) / map.h] : [box.width / 2, box.height / 2];
+  Swing.grab(swing, { pivot: grabbedAt, com, size: [box.width, box.height], at: windowAt || [window.screenX, window.screenY] });
+  petEl.style.setProperty('--pivot-x', `${grabbedAt[0]}px`);
+  petEl.style.setProperty('--pivot-y', `${grabbedAt[1]}px`);
+  petEl.classList.add('held');
+  animate();
+  show('aha', { line: random(['诶诶？要带我去哪儿？', '哇，飞起来了！', '放、放我下来！']), ms: 0 });
+}
+
+function setDown() {
+  dragging = false;
+  petEl.classList.remove('held');
+  Swing.release(swing);
+  animate();
+  show('idle', { line: random(['新位置不错～', '到啦！', '稳稳落地～']), ms: 2600 });
+}
+
 // ---------------------------------------------------------------- mouse
 
 petEl.addEventListener('mousedown', (e) => {
   if (e.button !== 0 || !overPet(e.clientX, e.clientY)) return;
   pressed = true;
   attention();
+  grabbedAt = boxPoint(e.clientX, e.clientY);
+  windowAt = null;
   window.pet.dragStart();
+  animate();
 });
 
 window.addEventListener('mouseup', async (e) => {
   if (e.button !== 0 || !pressed) return;
   pressed = false;
   const { moved } = await window.pet.dragEnd();
-  if (dragging) {
-    dragging = false;
-    show('idle', { line: random(['新位置不错～', '到啦！', '放我下来啦～']), ms: 2600 });
-  } else if (!moved) {
-    click();
-  }
+  if (dragging) setDown();
+  else if (!moved) click();
 });
 
 function click() {
@@ -258,6 +351,7 @@ document.addEventListener('contextmenu', (e) => {
 function applyGeometry(g) {
   document.documentElement.style.setProperty('--pet-w', `${g.petW}px`);
   document.documentElement.style.setProperty('--pet-h', `${g.petH}px`);
+  document.documentElement.style.setProperty('--floor', `${g.floor}px`);
 }
 
 window.pet.onCommand((cmd) => {
@@ -271,9 +365,11 @@ window.pet.onCommand((cmd) => {
   } else if (cmd.type === 'geometry') {
     applyGeometry(cmd.geometry);
   } else if (cmd.type === 'drag-begin') {
-    dragging = true;
-    show('aha', { line: random(['诶诶？要带我去哪儿？', '哇，飞起来了！']), ms: 0 });
-    petEl.classList.add('dragging');
+    pickUp();
+  } else if (cmd.type === 'drag-end') {
+    // the main process stopped following the mouse (she lost focus)
+    pressed = false;
+    if (dragging) setDown();
   }
 });
 
