@@ -6,10 +6,10 @@
 
 ## 下载
 
-每次推送后 GitHub Actions 会自动打包。打开仓库的 **Actions → build**，点进最近一次成功的运行，在页面底部的 Artifacts 里下载：
+到 [Releases](https://github.com/HuaiYue1/DeepSeek-Pet/releases/latest) 下载最新版：
 
-- **DeepSeek-Pet-Windows**：`DeepSeek-Pet-Setup-*.exe` 是安装版，`DeepSeek-Pet-*-portable.exe` 是免安装版，双击就能用。
-- **DeepSeek-Pet-macOS**：`*-arm64.dmg` 给 M 系列芯片，`*-x64.dmg` 给 Intel 芯片。
+- **Windows**：`DeepSeek-Pet-Setup-*.exe` 是安装版，`DeepSeek-Pet-*-portable.exe` 是免安装版，双击就能用。
+- **macOS**：`*-arm64.dmg` 给 M 系列芯片，`*-x64.dmg` 给 Intel 芯片。
 
 安装包没有做代码签名：
 
@@ -27,7 +27,7 @@ npm start
 
 | 操作 | 反应 |
 | --- | --- |
-| 按住拖动 | 把她拎到任何地方，位置会记住 |
+| 按住拖动 | 把她拎到任何地方，位置会记住。她挂在你抓住的地方，跟着鼠标晃，放下时轻轻一蹲 |
 | 单击 | 开心：「全部开源，MIT 协议，随便用～」 |
 | 连点 3 下 | 无语：「……这题问过 128K 遍了。」 |
 | 连点 5 下 | 服务器繁忙，请稍后再试。 |
@@ -40,6 +40,12 @@ npm start
 只有她身上的像素能点到，旁边的透明区域不挡鼠标，照常点下面的桌面。
 
 大小有小、中、大、特大四档，默认是「中」。状态图约 1300 像素高，4K 屏开 200% 缩放时，连「特大」都是清晰的。
+
+## 发布新版本
+
+每次推送后 GitHub Actions 都会打包，在 **Actions → build** 的运行页面底部 Artifacts 里能下到还没发布的版本。
+
+要发布到 Releases：改 `package.json` 里的 `version`，把这一版的说明写进 [`.github/release-notes.md`](.github/release-notes.md)，然后推一个同名的 tag（比如 `v1.0.1`）。**release** 工作流会打包 Windows 和 macOS 版并发布。
 
 ## 目录
 

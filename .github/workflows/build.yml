@@ -1,9 +1,11 @@
 name: build
 
 # Packages the desktop pet for Windows and macOS. The installers show up as
-# downloadable artifacts on the workflow run page.
+# downloadable artifacts on the workflow run page. release.yml reuses this to
+# build a release.
 on:
   push:
+    branches: ['**']
     paths:
       - 'app/**'
       - 'art/png/**'
@@ -12,6 +14,7 @@ on:
       - 'package-lock.json'
       - '.github/workflows/build.yml'
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   package:
