@@ -1,0 +1,166 @@
+:root {
+  --pet-w: 159px;
+  --pet-h: 300px;
+  --floor: 18px;
+  --ink: #1B2266;
+  --muted: #5C6394;
+  --blue: #4D6BFE;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  cursor: default;
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'WenQuanYi Zen Hei', sans-serif;
+}
+
+/* ---------------------------------------------------------------- pet */
+
+#pet {
+  position: absolute;
+  left: 50%;
+  bottom: var(--floor);
+  width: var(--pet-w);
+  height: var(--pet-h);
+  transform: translateX(-50%);
+}
+
+/* Three layers: #swing tilts her about the point you grabbed and #squash
+   squashes and stretches her (both set by pet.js, see swing.js), #sprite
+   runs the per-state animation. */
+#swing,
+#squash {
+  width: 100%;
+  height: 100%;
+}
+
+#swing { transform-origin: var(--pivot-x, 50%) var(--pivot-y, 50%); }
+#squash { transform-origin: 50% 100%; }
+
+#sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+  animation: bob 3.2s ease-in-out infinite;
+}
+
+#pet[data-state="pop"] #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
+#pet[data-state="happy"] #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
+#pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
+#pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
+#pet.held #sprite { animation: none; }
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes pop {
+  0% { transform: scale(0.96, 1.03); }
+  60% { transform: scale(1.02, 0.98); }
+  100% { transform: scale(1); }
+}
+@keyframes hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-12px) scale(0.98, 1.02); }
+  60% { transform: translateY(0) scale(1.03, 0.97); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-1.5px) rotate(-0.6deg); }
+  75% { transform: translateX(1.5px) rotate(0.6deg); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.006, 0.985); }
+}
+
+/* ---------------------------------------------------------------- bubble */
+
+/* sits right on top of the sprite, whose top already leaves room for her effects */
+#bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--floor) + var(--pet-h) - 6px);
+  box-sizing: border-box;
+  max-width: 272px;
+  padding: 9px 14px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: 0 4px 0 rgba(27, 34, 102, 0.14);
+  transform: translate(-50%, 6px) scale(0.96);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#bubble.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  pointer-events: auto;
+}
+
+#bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+#badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#badge.show { display: flex; }
+
+#badge i {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--blue);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+#badge.done i {
+  border-color: var(--blue);
+  animation: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#text .caret {
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -2px;
+  background: var(--ink);
+  animation: blink 0.8s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
