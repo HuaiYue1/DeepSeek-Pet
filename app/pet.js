@@ -98,9 +98,12 @@ function hideBubble() {
 // ---------------------------------------------------------------- states
 
 // Show a state's sprite; say something; go back to idle after `ms` (0 = stay).
+// Whatever she was doing (walking, dancing...) stops.
 function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = false } = {}) {
   if (!sprites[key]) return;
-  stop('back', 'think');
+  stop('back', 'think', 'act');
+  stopWalking();
+  petEl.dataset.act = '';
   current = key;
   sprite.src = sprites[key];
   // a new sprite comes in already facing the right way, without turning round
@@ -500,8 +503,7 @@ function boxPoint(clientX, clientY) {
 
 function pickUp() {
   dragging = true;
-  stopWalking();
-  petEl.dataset.act = '';
+  // she is carried as the surprised sprite, so her balance is that sprite's
   show('aha', { line: eventLine('pickUp'), ms: 0 });
   const box = petEl.getBoundingClientRect();
   const map = hitMaps[current];

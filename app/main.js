@@ -52,8 +52,11 @@ function loadSettings() {
   if (!SIZES[settings.size]) settings.size = 'medium';
 }
 
+// Saves where she is now too, so a save for some other setting never
+// writes an old position (or drops one that was about to be saved).
 function saveSettings() {
   clearTimeout(saveTimer);
+  if (win && !drag) [settings.x, settings.y] = win.getPosition();
   fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
   fs.writeFileSync(settingsFile(), JSON.stringify(settings, null, 2));
 }
@@ -61,11 +64,7 @@ function saveSettings() {
 // Remember where she is once she has stopped moving for a moment.
 function savePositionSoon() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    if (!win) return;
-    [settings.x, settings.y] = win.getPosition();
-    saveSettings();
-  }, 800);
+  saveTimer = setTimeout(saveSettings, 800);
 }
 
 function loadSprites() {
@@ -272,10 +271,7 @@ function finishDrag() {
   clearInterval(drag.timer);
   const { moved } = drag;
   drag = null;
-  if (moved) {
-    [settings.x, settings.y] = win.getPosition();
-    saveSettings();
-  }
+  if (moved) saveSettings();
   return moved;
 }
 
