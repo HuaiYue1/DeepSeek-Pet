@@ -29,17 +29,22 @@ body {
   transform: translateX(-50%);
 }
 
-/* Three layers: #swing tilts her about the point you grabbed and #squash
-   squashes and stretches her (both set by pet.js, see swing.js), #sprite
-   runs the per-state animation. */
+/* Layers: #swing tilts her about the point you grabbed and #squash
+   squashes and stretches her (both set by pet.js, see swing.js), #flip
+   turns her round, #sprite runs the per-state animation or, while she is
+   doing something (data-act), that activity's animation. */
 #swing,
-#squash {
+#squash,
+#flip {
   width: 100%;
   height: 100%;
 }
 
 #swing { transform-origin: var(--pivot-x, 50%) var(--pivot-y, 50%); }
 #squash { transform-origin: 50% 100%; }
+#flip { transition: transform 0.24s ease-in-out; }
+#pet.mirrored #flip { transform: scaleX(-1); }
+#pet.snap #flip { transition: none; }
 
 #sprite {
   display: block;
@@ -53,6 +58,11 @@ body {
 #pet[data-state="happy"] #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
 #pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
 #pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
+#pet[data-act="walk"] #sprite { animation: waddle 0.64s ease-in-out infinite; }
+#pet[data-act="dance"] #sprite { animation: sway 0.9s ease-in-out infinite; }
+#pet[data-act="stretch"] #sprite { animation: stretch 1.8s ease-in-out; }
+#pet[data-act="munch"] #sprite { animation: munch 0.32s ease-in-out infinite; }
+#pet[data-act="wave"] #sprite { animation: wave 0.7s ease-in-out infinite; }
 #pet.held #sprite { animation: none; }
 
 @keyframes bob {
@@ -77,6 +87,104 @@ body {
 @keyframes breathe {
   0%, 100% { transform: scale(1, 1); }
   50% { transform: scale(1.006, 0.985); }
+}
+/* a waddle: rocking from foot to foot, a little bob with each step */
+@keyframes waddle {
+  0%, 100% { transform: rotate(-3.5deg); }
+  25% { transform: translateY(-5px) rotate(0deg); }
+  50% { transform: rotate(3.5deg); }
+  75% { transform: translateY(-5px) rotate(0deg); }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-6deg); }
+  25% { transform: translateY(-8px) rotate(0deg); }
+  50% { transform: rotate(6deg); }
+  75% { transform: translateY(-8px) rotate(0deg); }
+}
+@keyframes stretch {
+  0%, 100% { transform: none; }
+  35%, 60% { transform: scale(0.965, 1.06); }
+  80% { transform: scale(1.025, 0.975); }
+}
+@keyframes munch {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.025, 0.97); }
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+/* ---------------------------------------------------------------- effects */
+
+/* little things floating up around her head: Zs, notes, hearts, sweat... */
+#fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fx {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  color: var(--color, var(--blue));
+  font: 700 var(--size, 16px) / 1 'Segoe UI Symbol', 'Apple Symbols', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  text-shadow: 0 0 3px #fff, 0 0 2px #fff;
+  opacity: 0;
+  animation: rise var(--ms, 1600ms) ease-out forwards;
+}
+
+@keyframes rise {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+  15% { opacity: 1; transform: translate(-50%, -6px) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1); }
+}
+
+.fx-spark { animation-name: twinkle; }
+
+@keyframes twinkle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
+  40% { opacity: 1; transform: translate(calc(-50% + var(--dx) / 2), calc(-50% + var(--dy) / 2)) scale(1.15) rotate(20deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6) rotate(45deg); }
+}
+
+.fx-sweat {
+  width: calc(var(--size) * 0.75);
+  height: var(--size);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: linear-gradient(#d4efff, #5ab2ff);
+  box-shadow: 0 0 0 1.5px #fff;
+  animation-name: drip;
+}
+
+@keyframes drip {
+  0% { opacity: 0; transform: translate(-50%, -4px) scale(0.6); }
+  20% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(0.9); }
+}
+
+/* a Token coin flying into her mouth */
+.fx-coin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3b0, #f2c230 60%, #d49b12);
+  box-shadow: 0 0 0 1.5px #fff;
+  color: #8a5a00;
+  font-size: calc(var(--size) * 0.6);
+  text-shadow: none;
+  animation-name: gulp;
+  animation-timing-function: ease-in;
+}
+
+@keyframes gulp {
+  0% { opacity: 0; transform: translate(calc(-50% + var(--dx)), -12px) scale(0.9); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 0) scale(0.3); }
 }
 
 /* ---------------------------------------------------------------- bubble */

@@ -4,11 +4,12 @@
 // her speech bubble. The window ignores the mouse except over her own
 // pixels (the renderer tells us), so the desktop underneath stays usable.
 
-import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, net, screen, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATES, MORE_LINES } from '../art/states.mjs';
+import { STATES, MORE_LINES, EVENT_LINES } from '../art/states.mjs';
+import { isNewer, latestRelease } from './update.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spriteDir = path.join(here, '..', 'art', 'png');
@@ -33,10 +34,12 @@ const isLinux = process.platform === 'linux';
 
 let win = null;
 let tray = null;
-let settings = { size: 'medium', onTop: true, x: null, y: null };
+let settings = { size: 'medium', onTop: true, roam: true, x: null, y: null };
 let sprites = {};
 let spriteSize = [341, 644];
 let drag = null;
+let saveTimer = null;
+let update = null; // a newer release, once found: { version, url }
 
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 
@@ -50,8 +53,19 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  clearTimeout(saveTimer);
   fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
   fs.writeFileSync(settingsFile(), JSON.stringify(settings, null, 2));
+}
+
+// Remember where she is once she has stopped moving for a moment.
+function savePositionSoon() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!win) return;
+    [settings.x, settings.y] = win.getPosition();
+    saveSettings();
+  }, 800);
 }
 
 function loadSprites() {
@@ -126,9 +140,7 @@ function createWindow() {
     send({ type: 'drag-end' });
   });
   win.on('moved', () => {
-    if (drag) return; // saved when the drag ends
-    [settings.x, settings.y] = win.getPosition();
-    saveSettings();
+    if (!drag) savePositionSoon(); // a drag saves when it ends
   });
 }
 
@@ -150,6 +162,12 @@ function resize(size) {
   });
   saveSettings();
   send({ type: 'geometry', geometry: g });
+}
+
+function setRoam(roam) {
+  settings.roam = roam;
+  saveSettings();
+  send({ type: 'roam', on: roam });
 }
 
 function setOnTop(onTop) {
@@ -177,6 +195,7 @@ function contextMenu() {
       label: '大小',
       submenu: Object.entries(SIZES).map(([key, s]) => ({ label: s.label, type: 'radio', checked: settings.size === key, click: () => resize(key) })),
     },
+    { label: '自己走动', type: 'checkbox', checked: settings.roam, click: (item) => setRoam(item.checked) },
     { label: '总在最前', type: 'checkbox', checked: settings.onTop, click: (item) => setOnTop(item.checked) },
   ];
   if (!isLinux) {
@@ -187,6 +206,9 @@ function contextMenu() {
       click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }),
     });
   }
+  template.push({ type: 'separator' });
+  if (update) template.push({ label: `下载新版本 v${update.version}`, click: () => shell.openExternal(update.url) });
+  template.push({ label: '检查更新', click: () => checkForUpdate(true) });
   template.push({ type: 'separator' }, { label: '隐藏', click: () => win.hide() }, { label: '退出', click: () => app.quit() });
   return Menu.buildFromTemplate(template);
 }
@@ -204,11 +226,33 @@ function createTray() {
   if (!isMac) tray.on('click', toggleVisible);
 }
 
+// ---------------------------------------------------------------- updates
+
+// Look for a newer release now and then and have her mention it; the menu
+// then offers its download page. `asked`: from the menu, so also say when
+// there is nothing new or the check failed.
+async function checkForUpdate(asked = false) {
+  try {
+    const latest = await latestRelease(net.fetch);
+    if (isNewer(latest.version, app.getVersion())) {
+      update = latest;
+      send({ type: 'update', version: latest.version });
+    } else if (asked) {
+      send({ type: 'update', upToDate: true, version: app.getVersion() });
+    }
+  } catch {
+    if (asked) send({ type: 'update', failed: true });
+  }
+}
+
 // ---------------------------------------------------------------- IPC
 
 ipcMain.handle('pet:init', () => ({
   states: STATES,
   moreLines: MORE_LINES,
+  eventLines: EVENT_LINES,
+  roam: settings.roam,
+  version: app.getVersion(),
   sprites,
   geometry: geometry(),
 }));
@@ -273,6 +317,26 @@ ipcMain.handle('pet:drag-tick', () => {
 
 ipcMain.handle('pet:drag-end', () => ({ moved: finishDrag() }));
 
+// Walking on her own: move sideways by dx, but not past the edges of the
+// screen she is on (if she was dragged past one, only back towards it).
+// Returns how far she actually moved.
+ipcMain.handle('pet:walk', (_e, dx) => {
+  if (drag || !win || !Number.isFinite(dx)) return { moved: 0 };
+  const b = win.getBounds();
+  const g = geometry();
+  const area = screen.getDisplayMatching(b).workArea;
+  const margin = (g.width - g.petW) / 2; // room either side of her body
+  const minX = area.x - margin;
+  const maxX = area.x + area.width - g.width + margin;
+  const x = Math.round(dx < 0 ? Math.max(b.x + dx, Math.min(b.x, minX)) : Math.min(b.x + dx, Math.max(b.x, maxX)));
+  if (x !== b.x) {
+    // her own size rather than getBounds()'s, which can creep with fractional scaling
+    win.setBounds({ x, y: b.y, width: g.width, height: g.height });
+    savePositionSoon();
+  }
+  return { moved: x - b.x };
+});
+
 // ---------------------------------------------------------------- app
 
 if (!app.requestSingleInstanceLock()) {
@@ -285,6 +349,8 @@ if (!app.requestSingleInstanceLock()) {
     loadSprites();
     createWindow();
     createTray();
+    setTimeout(checkForUpdate, 20000);
+    setInterval(checkForUpdate, 12 * 3600 * 1000);
   });
   app.on('window-all-closed', () => app.quit());
 }
