@@ -53,7 +53,7 @@
 | `cut/` | 统一身高、按脚底对齐后的图，908×1337，透明背景 |
 | `png/` | 最终状态图：在 `cut/` 的基础上写好了牌子和泡泡里的字，桌宠直接用 |
 | `character-sheet.png` | 角色设定图，1800×1200 |
-| `states.mjs` | 台词本（各状态和各种事的台词）、状态名，以及要写的字、图标取景的位置 |
+| `states.mjs` | 台词本（各状态和各种事的台词）、状态名，以及要写的字、图标取景的位置，和各张图上会自己动的部位（眨的眼睛、挥的手、啃的金币） |
 | `prompts.md` | AI 绘图提示词 |
 | `cutout.py` | 对齐脚本；白底的图也能先抠图再对齐 |
 | `build.mjs`、`sheet.mjs` | 写字、做图标、排设定图的脚本 |
@@ -71,7 +71,7 @@ npx playwright install chromium   # 本机没有 Chromium 时才需要
 npm run art
 ```
 
-`--normalize` 会把各张图缩放到同一身高（最高 1300 像素）。换了新图以后，牌子、泡泡和脸的位置会变，改 `states.mjs` 里的 `ART_CANVAS`、`OVERLAYS` 和 `ICONS` 就行。
+`--normalize` 会把各张图缩放到同一身高（最高 1300 像素）。换了新图以后，牌子、泡泡和脸的位置会变，改 `states.mjs` 里的 `ART_CANVAS`、`OVERLAYS`、`ICONS` 和 `RIGS` 就行；如果连身材、姿势都变了，`app/puppet.js` 里量好的脖子、腰、腿、尾巴的位置也要跟着改。
 
 ---
 

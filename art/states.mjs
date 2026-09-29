@@ -113,6 +113,19 @@ export const ART_CANVAS = [908, 1337];
 // App and tray icons cut from her face in the hello sprite: [x, y, side].
 export const ICONS = { app: [210, 10, 480], tray: [284, 104, 330] };
 
+// The parts of each sprite that move on their own (see app/puppet.js), on
+// ART_CANVAS: eyes that blink, each [left, right, upper lash line, lower
+// lid]; a raised hand that waves, [x, y, radius, elbow x, elbow y]; a coin
+// she bites, [x, y, radius]. Closed or swirly eyes don't blink.
+export const RIGS = {
+  hello: { eyes: [[360, 415, 265, 305], [456, 519, 244, 284]], hand: [645, 405, 125, 605, 555] },
+  idle: { eyes: [[352, 412, 262, 300], [455, 520, 240, 281]] },
+  think: { eyes: [[355, 405, 261, 299], [452, 514, 234, 276]] },
+  happy: { hand: [670, 405, 125, 625, 560] },
+  aha: { eyes: [[356, 411, 262, 300], [456, 516, 242, 284]] },
+  eat: { eyes: [[360, 415, 266, 304], [456, 519, 243, 283]], bite: [455, 415, 130] },
+};
+
 // Text written onto the blank sign and thought bubble of the AI art.
 // box is [x, y, width, height] on ART_CANVAS; lines are [text, font size].
 export const OVERLAYS = {
