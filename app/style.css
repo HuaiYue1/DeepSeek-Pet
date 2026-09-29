@@ -29,104 +29,99 @@ body {
   transform: translateX(-50%);
 }
 
-/* Layers: #swing tilts her about the point you grabbed and #squash
-   squashes and stretches her (both set by pet.js, see swing.js), #flip
-   turns her round, #sprite runs the per-state animation or, while she is
-   doing something (data-act), that activity's animation. */
+/* Layers: #swing tilts her about the point you grabbed (set by pet.js, see
+   swing.js), #flip turns her round, #sprite runs the per-state animation or,
+   while she is doing something (data-act), that activity's animation.
+
+   The pictures are only ever moved about, never stretched, squashed or
+   bent: that just looks like a picture being pulled out of shape. So the
+   animations below all use `translate`, and turning round is an instant
+   flip as she gives a little hop, rather than a card flipping over. */
 #swing,
-#squash,
 #flip {
   width: 100%;
   height: 100%;
 }
 
 #swing { transform-origin: var(--pivot-x, 50%) var(--pivot-y, 50%); }
-#squash { transform-origin: 50% 100%; }
-#flip { transition: transform 0.24s ease-in-out; }
 #pet.mirrored #flip { transform: scaleX(-1); }
-#pet.snap #flip { transition: none; }
+#pet.turning #flip { animation: hop 0.26s; --hop: -6px; }
 
 #sprite {
   display: block;
   width: 100%;
   height: 100%;
-  transform-origin: 50% 100%;
-  animation: bob 3.2s ease-in-out infinite;
 }
 
-#pet[data-state="pop"] #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
-#pet[data-state="happy"] #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
+#pet[data-state="happy"] #sprite { animation: hop 0.5s 2; --hop: -12px; }
 #pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
-#pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
-#pet[data-act="walk"] #sprite { animation: waddle 0.64s ease-in-out infinite; }
-#pet[data-act="run"] #sprite { animation: waddle 0.36s ease-in-out infinite; }
-#pet[data-act="jump"] #sprite { animation: jump 0.45s ease-out; }
+#pet[data-act="walk"] #sprite { animation: step 0.32s infinite; --hop: -4px; }
+#pet[data-act="run"] #sprite { animation: step 0.18s infinite; --hop: -6px; }
+#pet[data-act="jump"] #sprite { animation: hop 0.45s; --hop: -26px; }
 #pet[data-act="tap"] #sprite { animation: tap 0.5s ease-in-out 3; }
-#pet[data-act="dance"] #sprite { animation: sway 0.9s ease-in-out infinite; }
-#pet[data-act="stretch"] #sprite { animation: stretch 1.8s ease-in-out; }
-#pet[data-act="munch"] #sprite { animation: munch 0.32s ease-in-out infinite; }
-#pet[data-act="wave"] #sprite { animation: wave 0.7s ease-in-out infinite; }
+#pet[data-act="dance"] #sprite { animation: dance 0.9s infinite; }
+#pet[data-act="stretch"] #sprite { animation: tiptoe 1.8s ease-in-out; }
+#pet[data-act="munch"] #sprite { animation: step 0.32s infinite; --hop: -2px; }
+#pet[data-act="wave"] #sprite { animation: step 0.35s infinite; --hop: -2px; }
 #pet.held #sprite { animation: none; }
 
-@keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-@keyframes pop {
-  0% { transform: scale(0.96, 1.03); }
-  60% { transform: scale(1.02, 0.98); }
-  100% { transform: scale(1); }
-}
+/* up and down again, as if thrown up: slowing to the top, speeding back down */
 @keyframes hop {
-  0%, 100% { transform: translateY(0) scale(1); }
-  30% { transform: translateY(-12px) scale(0.98, 1.02); }
-  60% { transform: translateY(0) scale(1.03, 0.97); }
+  0% { translate: 0 0; animation-timing-function: cubic-bezier(0.25, 0.6, 0.45, 1); }
+  45% { translate: 0 var(--hop); animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4); }
+  90%, 100% { translate: 0 0; }
+}
+/* a little bounce with each step */
+@keyframes step {
+  0%, 100% { translate: 0 0; animation-timing-function: ease-out; }
+  50% { translate: 0 var(--hop); animation-timing-function: ease-in; }
 }
 @keyframes shake {
-  0%, 100% { transform: translateX(0) rotate(0); }
-  25% { transform: translateX(-1.5px) rotate(-0.6deg); }
-  75% { transform: translateX(1.5px) rotate(0.6deg); }
+  0%, 100% { translate: 0 0; }
+  25% { translate: -1.5px 0; }
+  75% { translate: 1.5px 0; }
 }
-@keyframes breathe {
-  0%, 100% { transform: scale(1, 1); }
-  50% { transform: scale(1.006, 0.985); }
+/* hopping from side to side */
+@keyframes dance {
+  0%, 50%, 100% { translate: 0 0; animation-timing-function: ease-out; }
+  25% { translate: -6px -9px; animation-timing-function: ease-in; }
+  75% { translate: 6px -9px; animation-timing-function: ease-in; }
 }
-/* a waddle: rocking from foot to foot, a little bob with each step */
-@keyframes waddle {
-  0%, 100% { transform: rotate(-3.5deg); }
-  25% { transform: translateY(-5px) rotate(0deg); }
-  50% { transform: rotate(3.5deg); }
-  75% { transform: translateY(-5px) rotate(0deg); }
-}
-@keyframes jump {
-  0%, 100% { transform: none; }
-  20% { transform: scale(1.05, 0.93); }
-  55% { transform: translateY(-26px) scale(0.97, 1.04); }
-  85% { transform: scale(1.04, 0.95); }
-}
-/* leaning forward to press something below her: she faces left as drawn */
+/* bobbing down to press something below her */
 @keyframes tap {
-  0%, 100% { transform: none; }
-  45% { transform: translateY(5px) rotate(-7deg) scale(1.01, 0.97); }
+  0%, 100% { translate: 0 0; }
+  45% { translate: 0 4px; }
 }
-@keyframes sway {
-  0%, 100% { transform: rotate(-6deg); }
-  25% { transform: translateY(-8px) rotate(0deg); }
-  50% { transform: rotate(6deg); }
-  75% { transform: translateY(-8px) rotate(0deg); }
+/* up on tiptoe for a stretch */
+@keyframes tiptoe {
+  0%, 100% { translate: 0 0; }
+  35%, 65% { translate: 0 -6px; }
 }
-@keyframes stretch {
-  0%, 100% { transform: none; }
-  35%, 60% { transform: scale(0.965, 1.06); }
-  80% { transform: scale(1.025, 0.975); }
+
+/* her shadow on the floor: it stays there when she hops, and goes when she
+   is picked up */
+#shadow {
+  position: absolute;
+  left: 32.5%;
+  bottom: 0.6%;
+  width: 29%;
+  height: 3.6%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(27, 34, 102, 0.3), rgba(27, 34, 102, 0));
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
-@keyframes munch {
-  0%, 100% { transform: scale(1, 1); }
-  50% { transform: scale(1.025, 0.97); }
-}
-@keyframes wave {
-  0%, 100% { transform: rotate(-2deg); }
-  50% { transform: rotate(2deg); }
+
+#pet.mirrored #shadow { left: 38.5%; }
+#pet.held #shadow { opacity: 0; }
+#pet[data-state="happy"] #shadow { animation: shadow 0.5s 2; }
+#pet[data-act="jump"] #shadow { animation: shadow 0.45s; }
+#pet[data-act="dance"] #shadow { animation: shadow 0.45s infinite; }
+
+/* smaller and fainter while she is up in the air */
+@keyframes shadow {
+  0%, 90%, 100% { opacity: 1; scale: 1; }
+  45% { opacity: 0.6; scale: 0.8; }
 }
 
 /* ---------------------------------------------------------------- effects */

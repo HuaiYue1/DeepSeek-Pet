@@ -5,7 +5,6 @@
 const $ = (id) => document.getElementById(id);
 const petEl = $('pet');
 const swingEl = $('swing');
-const squashEl = $('squash');
 const sprite = $('sprite');
 const fxEl = $('fx');
 const bubble = $('bubble');
@@ -107,12 +106,10 @@ function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = fal
   current = key;
   sprite.src = sprites[key];
   // a new sprite comes in already facing the right way, without turning round
-  petEl.classList.add('snap');
   petEl.classList.toggle('mirrored', mirrored());
   petEl.dataset.state = '';
   void petEl.offsetWidth; // restart the CSS animation
-  petEl.classList.remove('snap');
-  petEl.dataset.state = ['happy', 'busy', 'sleep'].includes(key) ? key : 'pop';
+  petEl.dataset.state = key;
   badge.classList.remove('show', 'done');
   if (!quiet) say(line ?? random(lines(key)), { ms: ms || 0, typing });
   if (ms && key !== then) later('back', ms, () => show(then, { quiet: true }));
@@ -173,7 +170,13 @@ function turn(dir) {
   if (!dir || dir === facing) return;
   facing = dir;
   lastTurn = Date.now();
-  petEl.classList.toggle('mirrored', mirrored());
+  if (petEl.classList.contains('mirrored') === mirrored()) return; // a sprite that is never mirrored
+  petEl.classList.toggle('mirrored');
+  // with a little hop, so that she turns rather than flips over like a card
+  petEl.classList.remove('turning');
+  void petEl.offsetWidth;
+  petEl.classList.add('turning');
+  later('turning', 300, () => petEl.classList.remove('turning'));
 }
 
 // When the pointer comes near (but not onto her) she turns towards it.
@@ -552,9 +555,7 @@ let grabbedAt = [0, 0]; // where the mouse went down, in her box
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 function drawPose() {
-  const p = Swing.pose(swing);
-  swingEl.style.transform = p.angle ? `rotate(${p.angle}rad)` : '';
-  squashEl.style.transform = p.sx !== 1 || p.tx || p.ty ? `translate(${p.tx}px, ${p.ty}px) scale(${p.sx}, ${p.sy})` : '';
+  swingEl.style.transform = swing.angle ? `rotate(${swing.angle}rad)` : '';
 }
 
 function frame(now) {
@@ -575,20 +576,16 @@ function animate() {
   requestAnimationFrame(frame);
 }
 
-// A point in the window as a point in her own box, undoing her tilt and squash.
+// A point in the window as a point in her own box, undoing her tilt.
 function boxPoint(clientX, clientY) {
   const box = petEl.getBoundingClientRect();
-  let x = clientX - box.left;
-  let y = clientY - box.top;
-  const p = Swing.pose(swing);
-  if (p.angle) {
-    const [ox, oy] = swing.pivot;
-    const c = Math.cos(p.angle);
-    const s = Math.sin(p.angle);
-    [x, y] = [ox + (x - ox) * c + (y - oy) * s, oy - (x - ox) * s + (y - oy) * c];
-  }
-  const [fx, fy] = [box.width / 2, box.height];
-  return [fx + (x - p.tx - fx) / p.sx, fy + (y - p.ty - fy) / p.sy];
+  const x = clientX - box.left;
+  const y = clientY - box.top;
+  if (!swing.angle) return [x, y];
+  const [ox, oy] = swing.pivot;
+  const c = Math.cos(swing.angle);
+  const s = Math.sin(swing.angle);
+  return [ox + (x - ox) * c + (y - oy) * s, oy - (x - ox) * s + (y - oy) * c];
 }
 
 function pickUp() {
