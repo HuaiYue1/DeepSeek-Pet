@@ -59,6 +59,9 @@ body {
 #pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
 #pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
 #pet[data-act="walk"] #sprite { animation: waddle 0.64s ease-in-out infinite; }
+#pet[data-act="run"] #sprite { animation: waddle 0.36s ease-in-out infinite; }
+#pet[data-act="jump"] #sprite { animation: jump 0.45s ease-out; }
+#pet[data-act="tap"] #sprite { animation: tap 0.5s ease-in-out 3; }
 #pet[data-act="dance"] #sprite { animation: sway 0.9s ease-in-out infinite; }
 #pet[data-act="stretch"] #sprite { animation: stretch 1.8s ease-in-out; }
 #pet[data-act="munch"] #sprite { animation: munch 0.32s ease-in-out infinite; }
@@ -94,6 +97,17 @@ body {
   25% { transform: translateY(-5px) rotate(0deg); }
   50% { transform: rotate(3.5deg); }
   75% { transform: translateY(-5px) rotate(0deg); }
+}
+@keyframes jump {
+  0%, 100% { transform: none; }
+  20% { transform: scale(1.05, 0.93); }
+  55% { transform: translateY(-26px) scale(0.97, 1.04); }
+  85% { transform: scale(1.04, 0.95); }
+}
+/* leaning forward to press something below her: she faces left as drawn */
+@keyframes tap {
+  0%, 100% { transform: none; }
+  45% { transform: translateY(5px) rotate(-7deg) scale(1.01, 0.97); }
 }
 @keyframes sway {
   0%, 100% { transform: rotate(-6deg); }
@@ -162,6 +176,22 @@ body {
   0% { opacity: 0; transform: translate(-50%, -4px) scale(0.6); }
   20% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(0.9); }
+}
+
+/* a pretend click on the taskbar */
+.fx-ripple {
+  width: var(--size);
+  height: calc(var(--size) * 0.3);
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--blue), 0 0 10px 2px rgba(77, 107, 254, 0.7);
+  animation-name: ripple;
+}
+
+/* flat, so it stays within the strip of window below her feet */
+@keyframes ripple {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
 }
 
 /* a Token coin flying into her mouth */

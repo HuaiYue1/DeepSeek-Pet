@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STATES, MORE_LINES, EVENT_LINES } from '../art/states.mjs';
 import { isNewer, latestRelease } from './update.js';
+import { surroundings, walkStep } from './walkway.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spriteDir = path.join(here, '..', 'art', 'png');
@@ -34,10 +35,11 @@ const isLinux = process.platform === 'linux';
 
 let win = null;
 let tray = null;
-let settings = { size: 'medium', onTop: true, roam: true, x: null, y: null };
+let settings = { size: 'medium', onTop: true, roam: true, crossScreens: true, x: null, y: null };
 let sprites = {};
 let spriteSize = [341, 644];
 let drag = null;
+let hop = null; // hopping between screens: the timer moving her
 let saveTimer = null;
 let update = null; // a newer release, once found: { version, url }
 
@@ -169,6 +171,11 @@ function setRoam(roam) {
   send({ type: 'roam', on: roam });
 }
 
+function setCrossScreens(cross) {
+  settings.crossScreens = cross;
+  saveSettings();
+}
+
 function setOnTop(onTop) {
   settings.onTop = onTop;
   win.setAlwaysOnTop(onTop, 'floating');
@@ -195,6 +202,7 @@ function contextMenu() {
       submenu: Object.entries(SIZES).map(([key, s]) => ({ label: s.label, type: 'radio', checked: settings.size === key, click: () => resize(key) })),
     },
     { label: '自己走动', type: 'checkbox', checked: settings.roam, click: (item) => setRoam(item.checked) },
+    { label: '跨屏幕走动', type: 'checkbox', checked: settings.crossScreens, enabled: settings.roam, click: (item) => setCrossScreens(item.checked) },
     { label: '总在最前', type: 'checkbox', checked: settings.onTop, click: (item) => setOnTop(item.checked) },
   ];
   if (!isLinux) {
@@ -295,6 +303,10 @@ function follow() {
 
 ipcMain.on('pet:drag-start', () => {
   finishDrag();
+  if (hop) {
+    clearInterval(hop); // caught in mid-hop
+    hop = null;
+  }
   const cursor = screen.getCursorScreenPoint();
   const { x, y, width, height } = win.getBounds();
   drag = { cursor, x, y, width, height, at: [x, y], moved: false, tick: Date.now() };
@@ -313,24 +325,60 @@ ipcMain.handle('pet:drag-tick', () => {
 
 ipcMain.handle('pet:drag-end', () => ({ moved: finishDrag() }));
 
-// Walking on her own: move sideways by dx, but not past the edges of the
-// screen she is on (if she was dragged past one, only back towards it).
-// Returns how far she actually moved.
+// Walking on her own (see walkway.js): a step of dx along her floor; at the
+// edge of her screen she stops, or walks on to the next screen if allowed,
+// hopping up or down onto its floor when it is at another height. Returns
+// how far she moved, and how long a hop takes if she started one.
 ipcMain.handle('pet:walk', (_e, dx) => {
+  if (hop) return { moved: 0, busy: true };
   if (drag || !win || !Number.isFinite(dx)) return { moved: 0 };
   const b = win.getBounds();
   const g = geometry();
-  const area = screen.getDisplayMatching(b).workArea;
-  const margin = (g.width - g.petW) / 2; // room either side of her body
-  const minX = area.x - margin;
-  const maxX = area.x + area.width - g.width + margin;
-  const x = Math.round(dx < 0 ? Math.max(b.x + dx, Math.min(b.x, minX)) : Math.min(b.x + dx, Math.max(b.x, maxX)));
-  if (x !== b.x) {
+  const pet = { w: g.petW, h: g.petH, floor: g.floor };
+  const to = walkStep({ ...b, width: g.width, height: g.height }, dx, pet, screen.getAllDisplays(), settings.crossScreens);
+  if (to.hop) return { moved: to.x - b.x, hop: hopTo(b, to, g) };
+  if (to.x !== b.x) {
     // her own size rather than getBounds()'s, which can creep with fractional scaling
-    win.setBounds({ x, y: b.y, width: g.width, height: g.height });
+    win.setBounds({ x: Math.round(to.x), y: b.y, width: g.width, height: g.height });
     savePositionSoon();
   }
-  return { moved: x - b.x };
+  return { moved: Math.round(to.x) - b.x };
+});
+
+// A little jump in an arc from where she is to `to`; returns how long it takes.
+function hopTo(from, to, g) {
+  const ms = 450;
+  const rise = 40 + Math.max(0, from.y - to.y); // higher when jumping up
+  const start = Date.now();
+  hop = setInterval(() => {
+    const t = Math.min(1, (Date.now() - start) / ms);
+    const x = from.x + (to.x - from.x) * t;
+    const y = from.y + (to.y - from.y) * t - rise * 4 * t * (1 - t);
+    win?.setBounds({ x: Math.round(x), y: Math.round(y), width: g.width, height: g.height });
+    if (t >= 1) {
+      clearInterval(hop);
+      hop = null;
+      savePositionSoon();
+    }
+  }, 16);
+  return ms;
+}
+
+// What is around her: is she standing on the taskbar (or Dock), and is
+// there a screen to walk on to either side?
+ipcMain.handle('pet:where', () => {
+  if (!win) return {};
+  const g = geometry();
+  const here = surroundings({ ...win.getBounds(), width: g.width, height: g.height }, { w: g.petW, h: g.petH, floor: g.floor },
+    screen.getAllDisplays(), settings.roam && settings.crossScreens);
+  return { onTaskbar: here.taskbar >= 20, roomLeft: here.roomLeft, roomRight: here.roomRight, left: here.left, right: here.right };
+});
+
+// Pretending to click the taskbar: be in front of it while she does. Only
+// if she is kept on top anyway: otherwise you asked her not to cover your
+// windows, and she could not get in front of the taskbar in any case.
+ipcMain.on('pet:raise', () => {
+  if (settings.onTop) win?.moveTop();
 });
 
 // ---------------------------------------------------------------- app
