@@ -7,6 +7,8 @@ const petEl = $('pet');
 const swingEl = $('swing');
 const squashEl = $('squash');
 const sprite = $('sprite');
+const canvas = $('puppet');
+const shadow = $('shadow');
 const fxEl = $('fx');
 const bubble = $('bubble');
 const textEl = $('text');
@@ -24,7 +26,14 @@ let states = {};
 let moreLines = {};
 let eventLines = {};
 let sprites = {};
+let rigs = {};
 const hitMaps = {};
+const images = {}; // the sprites, loaded
+let puppet = null; // drawing her part by part (puppet.js), if there is WebGL2
+const motion = Motion.create();
+let look = 0; // a head tilt she looks about with
+let shows = 0; // sprites shown so far: showing the same one again starts it over
+let petH = 300;
 let current = 'idle';
 let interactive = false;
 let pressed = false;
@@ -105,7 +114,10 @@ function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = fal
   stopWalking();
   petEl.dataset.act = '';
   current = key;
+  shows += 1;
+  look = 0;
   sprite.src = sprites[key];
+  puppet?.show(key, images[key], rigs[key]);
   // a new sprite comes in already facing the right way, without turning round
   petEl.classList.add('snap');
   petEl.classList.toggle('mirrored', mirrored());
@@ -359,6 +371,15 @@ function stretch() {
 function lookAround() {
   show('idle', { line: eventLine('look'), ms: 2800 });
   fx('question');
+  if (puppet) {
+    // she tilts her head one way, then the other
+    look = 0.1;
+    later('next', 700, () => {
+      look = -0.08;
+      later('next', 800, () => (look = 0));
+    });
+    return;
+  }
   const was = facing;
   later('next', 600, () => {
     turn(-was);
@@ -449,6 +470,7 @@ function buildHitMap(key, url) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
+      images[key] = img;
       const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
@@ -480,23 +502,40 @@ function buildHitMap(key, url) {
   });
 }
 
-function overPet(x, y) {
+// Which point of her picture (as fractions of it) is at (x, y) in the
+// window, or null if none is.
+function spritePoint(x, y) {
+  const box = petEl.getBoundingClientRect();
+  if (puppet) {
+    // in her box, undoing her tilt and squash, and then her hop, which is
+    // about her feet; then on the canvas, and back through how she is bent
+    const [bx, by] = boxPoint(x, y);
+    const b = motion.body;
+    const qx = box.width / 2 + (bx - box.width / 2 - b.tx) / b.sx;
+    const qy = box.height + (by - box.height - b.ty) / b.sy;
+    const [px, py] = Puppet.PAD;
+    return puppet.pick((qx / box.width + px) / (1 + 2 * px), (qy / box.height + py) / (1 + 2 * py));
+  }
   // standing, the sprite's own box (it bobs and hops); tilted, undo the tilt
   let u, v;
   if (Swing.resting(swing)) {
     const r = sprite.getBoundingClientRect();
     [u, v] = [(x - r.left) / r.width, (y - r.top) / r.height];
   } else {
-    const box = petEl.getBoundingClientRect();
     const [bx, by] = boxPoint(x, y);
     [u, v] = [bx / box.width, by / box.height];
   }
-  if (u < 0 || u >= 1 || v < 0 || v >= 1) return false;
-  if (petEl.classList.contains('mirrored')) u = 1 - u;
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return null;
+  return [petEl.classList.contains('mirrored') ? 1 - u : u, v];
+}
+
+function overPet(x, y) {
+  const at = spritePoint(x, y);
+  if (!at) return false;
   const map = hitMaps[current];
   if (!map) return true;
-  const px = Math.floor(u * map.w);
-  const py = Math.floor(v * map.h);
+  const px = Math.floor(at[0] * map.w);
+  const py = Math.floor(at[1] * map.h);
   // look a few pixels around so thin hair strands are easy to grab
   for (let dy = -4; dy <= 4; dy += 4) {
     for (let dx = -4; dx <= 4; dx += 4) {
@@ -540,14 +579,15 @@ document.addEventListener('mouseleave', () => {
 
 // swing.js works out how she hangs, swings and lands; this draws it. The
 // pose runs on animation frames while the mouse is down, she is walking or
-// she is still settling, and while the mouse is down each frame also has
-// the main process move the window after the mouse, so window and pose move
-// in step.
+// she is still settling (and all the time if she is a puppet), and while
+// the mouse is down each frame also has the main process move the window
+// after the mouse, so window and pose move in step.
 const swing = Swing.create();
 let framing = false;
 let lastFrame = 0;
 let windowAt = null; // where the main process last put the window
 let grabbedAt = [0, 0]; // where the mouse went down, in her box
+let puppetDue = 0; // time since the puppet was last drawn
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -557,14 +597,42 @@ function drawPose() {
   squashEl.style.transform = p.sx !== 1 || p.tx || p.ty ? `translate(${p.tx}px, ${p.ty}px) scale(${p.sx}, ${p.sy})` : '';
 }
 
+// The puppet in her pose from motion.js: breathing, blinking, hair and
+// skirt swinging after her, stepping, and so on.
+function drawPuppet(dt) {
+  puppetDue += dt;
+  if (Motion.calm(motion) && puppetDue < 1 / 20) return; // only breathing and such: fewer frames will do
+  Motion.step(motion, puppetDue, {
+    at: [window.screenX, window.screenY],
+    height: petH,
+    sprite: current,
+    shows,
+    act: petEl.dataset.act || '',
+    held: dragging,
+    tilt: swing.angle,
+    mirrored: petEl.classList.contains('mirrored'),
+    look,
+  });
+  puppetDue = 0;
+  puppet.draw(motion.pose);
+  const b = motion.body;
+  canvas.style.transform = b.tx || b.ty || b.sx !== 1 || b.sy !== 1 ? `translate(${b.tx}px, ${b.ty}px) scale(${b.sx}, ${b.sy})` : '';
+  shadow.style.opacity = motion.shadow;
+  shadow.style.transform = motion.shadowScale !== 1 ? `scale(${motion.shadowScale})` : '';
+}
+
 function frame(now) {
   const dt = clamp((now - lastFrame) / 1000, 0.001, 0.05);
   lastFrame = now;
   if (pressed) window.pet.dragTick().then((at) => { if (at) windowAt = at; });
   if (walking) stepWalk(dt);
-  Swing.step(swing, dt, windowAt);
-  drawPose();
-  if (pressed || walking || !Swing.resting(swing)) requestAnimationFrame(frame);
+  const moving = pressed || walking || !Swing.resting(swing);
+  if (moving) {
+    Swing.step(swing, dt, windowAt);
+    drawPose();
+  }
+  if (puppet) drawPuppet(dt);
+  if (puppet || moving) requestAnimationFrame(frame);
   else framing = false;
 }
 
@@ -667,6 +735,7 @@ document.addEventListener('contextmenu', (e) => {
 // ---------------------------------------------------------------- main process
 
 function applyGeometry(g) {
+  petH = g.petH;
   document.documentElement.style.setProperty('--pet-w', `${g.petW}px`);
   document.documentElement.style.setProperty('--pet-h', `${g.petH}px`);
   document.documentElement.style.setProperty('--floor', `${g.floor}px`);
@@ -711,11 +780,22 @@ async function start() {
   const init = await window.pet.init();
   ({ states, moreLines, sprites } = init);
   eventLines = init.eventLines || {};
+  rigs = init.rigs || {};
   roam = init.roam !== false;
   applyGeometry(init.geometry);
   await Promise.all(Object.entries(sprites).map(([key, url]) => buildHitMap(key, url)));
+  puppet = Puppet.create(canvas);
+  if (puppet) {
+    petEl.classList.add('puppet');
+    // if the graphics card gives up, fall back to the plain picture
+    canvas.addEventListener('webglcontextlost', () => {
+      puppet = null;
+      petEl.classList.remove('puppet');
+    });
+  }
   show('hello', { line: states.hello.line, ms: 4200 });
   later('ambient', 9000, ambient);
+  animate();
 }
 
 start();
