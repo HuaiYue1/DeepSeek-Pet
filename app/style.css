@@ -42,43 +42,9 @@ body {
 
 #swing { transform-origin: var(--pivot-x, 50%) var(--pivot-y, 50%); }
 #squash { transform-origin: 50% 100%; }
-#flip { position: relative; transition: transform 0.24s ease-in-out; }
+#flip { transition: transform 0.24s ease-in-out; }
 #pet.mirrored #flip { transform: scaleX(-1); }
 #pet.snap #flip { transition: none; }
-
-/* With WebGL she is a puppet instead (#pet.puppet, see puppet.js and
-   motion.js): the canvas takes the picture's place, with room around it
-   for her hair, skirt and tail to swing out. She is mirrored as she is
-   drawn, and hops and squashes about her feet. */
-#puppet,
-#shadow { display: none; }
-#pet.puppet #sprite { display: none; }
-#pet.puppet #flip { transform: none; transition: none; }
-
-#pet.puppet #puppet {
-  display: block;
-  position: absolute;
-  left: -7%;
-  top: -4%;
-  width: 114%;
-  height: 108%;
-  transform-origin: 50% 96.3%;
-}
-
-/* her shadow on the floor */
-#pet.puppet #shadow {
-  display: block;
-  position: absolute;
-  left: 32.5%;
-  bottom: 0.6%;
-  width: 29%;
-  height: 3.6%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(27, 34, 102, 0.3), rgba(27, 34, 102, 0));
-  pointer-events: none;
-}
-
-#pet.puppet.mirrored #shadow { left: 38.5%; }
 
 #sprite {
   display: block;

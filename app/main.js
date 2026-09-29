@@ -8,7 +8,7 @@ import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, net, screen, shel
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATES, MORE_LINES, EVENT_LINES, RIGS } from '../art/states.mjs';
+import { STATES, MORE_LINES, EVENT_LINES } from '../art/states.mjs';
 import { isNewer, latestRelease } from './update.js';
 import { surroundings, walkStep } from './walkway.js';
 
@@ -258,7 +258,6 @@ ipcMain.handle('pet:init', () => ({
   states: STATES,
   moreLines: MORE_LINES,
   eventLines: EVENT_LINES,
-  rigs: RIGS,
   roam: settings.roam,
   version: app.getVersion(),
   sprites,
