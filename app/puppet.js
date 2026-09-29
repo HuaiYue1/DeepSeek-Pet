@@ -3,7 +3,9 @@
 // her head tilts, she leans from the hips with her feet planted, her feet
 // step when she walks, her tail wags, a hand waves, and her hair, skirt and
 // tail swing after her when she moves. motion.js works out the pose each
-// frame; without WebGL2 pet.js keeps showing the plain picture.
+// frame and the mesh is bent to it here, in plain JS, which also tells
+// pet.js which bit of her the mouse is over. Without WebGL2 pet.js keeps
+// showing the plain picture.
 //
 // Positions are in the sprite's own pixels (908x1337). The body landmarks
 // below were measured on the art and hold for every sprite, as they are all
@@ -16,77 +18,159 @@ const Puppet = (() => {
   const TEX = [908, 1337];
   const PAD = [0.07, 0.04]; // room around her box for parts that swing out
   const GRID = [34, 50]; // mesh columns and rows
+  const CHEST = [465, 520];
+  const NECK = [465, 398];
+  const HIPS = [465, 900];
+  const TAIL_ROOT = [600, 1050]; // where her tail comes out from under the skirt
+  const AHOGE_ROOT = [398, 58]; // of the strand of hair on her head
+  const NO_RIG = {};
+  // standing still, as drawn
+  const REST = { mirror: false, breath: 0, hair: [0, 0], skirt: [0, 0], ahoge: 0, head: 0, bend: 0, tail: 0, step: [0, 0, 0, 0], wave: 0, bite: 0, blink: 0 };
+
+  const ramp = (v, a, b) => {
+    const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+
+  // The mesh is plain maths, so that it can be tested, and so that the
+  // mouse can be told which bit of her it is over, however she is bent.
+
+  // A grid over the picture, and how much each of its points belongs to
+  // each part of her: soft 0..1 weights.
+  function makeMesh() {
+    const [cols, rows] = GRID;
+    const n = (cols + 1) * (rows + 1);
+    const uv = new Float32Array(2 * n);
+    const w = {};
+    for (const k of ['tail', 'legs', 'right', 'feet', 'head', 'upper', 'hair', 'skirt', 'ahoge', 'chest', 'shoulders']) w[k] = new Float32Array(n);
+    for (let j = 0, v = 0; j <= rows; j++) {
+      for (let i = 0; i <= cols; i++, v++) {
+        uv[2 * v] = i / cols;
+        uv[2 * v + 1] = j / rows;
+        const x = (i / cols) * TEX[0];
+        const y = (j / rows) * TEX[1];
+        const tail = Math.max(ramp(y, 996, 1030) * ramp(x, 548, 585), ramp(x, 772, 805) * ramp(y, 700, 745));
+        const legs = ramp(y, 985, 1075) * (1 - tail); // below the skirt
+        const sides = Math.max(1 - ramp(x, 160, 345), ramp(x, 600, 790));
+        const near = Math.max(0, 1 - Math.hypot(x - CHEST[0], y - CHEST[1]) / 300);
+        w.tail[v] = tail;
+        w.legs[v] = legs;
+        w.right[v] = ramp(x, 418, 440); // the leg on the right of the picture
+        w.feet[v] = ramp(y, 1060, 1185); // the feet, and the shins bending to them
+        w.head[v] = 1 - ramp(y, 335, 425);
+        w.upper[v] = (1 - ramp(y, 600, 960)) * (1 - tail); // above the hips
+        w.hair[v] = sides * ramp(y, 280, 620) * (1 - ramp(y, 680, 780)) * (1 - tail);
+        w.skirt[v] = Math.max(ramp(y, 760, 990) * (1 - legs) * (1 - tail) * (0.55 + 0.45 * Math.min(1, Math.abs(x - 455) / 320)), 0.8 * tail);
+        w.ahoge[v] = ramp(50 + 0.62 * (400 - x) - y, 0, 14) * ramp(Math.hypot(x - AHOGE_ROOT[0], y - AHOGE_ROOT[1]), 12, 90);
+        w.chest[v] = near * near;
+        w.shoulders[v] = 1 - ramp(y, 430, 760);
+      }
+    }
+    const index = new Uint16Array(6 * cols * rows);
+    for (let j = 0, k = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++, k += 6) {
+        const a = j * (cols + 1) + i;
+        index.set([a, a + 1, a + cols + 1, a + 1, a + cols + 2, a + cols + 1], k);
+      }
+    }
+    // `at`: where each point is drawn, as a fraction of the canvas (see bend)
+    const mesh = { n, uv, w, index, part: new Float32Array(n), rig: null, at: new Float32Array(2 * n) };
+    setRig(mesh, NO_RIG);
+    return mesh;
+  }
+
+  // The sprite's parts that move on their own (see RIGS in art/states.mjs):
+  // a raised hand [x, y, radius, elbow x, elbow y], or a coin [x, y, radius].
+  function setRig(mesh, rig = NO_RIG) {
+    if (rig === mesh.rig) return;
+    mesh.rig = rig;
+    const [x, y, r] = rig.hand || rig.bite || [0, 0, 0];
+    for (let v = 0; v < mesh.n; v++) {
+      const d = Math.hypot(mesh.uv[2 * v] * TEX[0] - x, mesh.uv[2 * v + 1] * TEX[1] - y);
+      mesh.part[v] = r > 0 ? 1 - ramp(d, 0.55 * r, r) : 0;
+    }
+  }
+
+  const pt = [0, 0];
+  function turn(cx, cy, a) {
+    if (!a) return;
+    const dx = pt[0] - cx;
+    const dy = pt[1] - cy;
+    const s = Math.sin(a);
+    const k = Math.cos(a);
+    pt[0] = cx + dx * k - dy * s;
+    pt[1] = cy + dx * s + dy * k;
+  }
+
+  // Bend the mesh into `pose` (see motion.js).
+  function bend(mesh, pose) {
+    const { w, part, rig, uv, at } = mesh;
+    const [phase, sweep, lift, bob] = pose.step;
+    const c = Math.cos(phase);
+    const s = Math.sin(phase);
+    const [, , , elbowX, elbowY] = rig.hand || [];
+    for (let v = 0; v < mesh.n; v++) {
+      pt[0] = uv[2 * v] * TEX[0];
+      pt[1] = uv[2 * v + 1] * TEX[1];
+      // walking: her feet take turns to lift and swing forward (to the left,
+      // as drawn), then push back along the floor
+      const l = w.legs[v] * w.feet[v] * (1 - w.right[v]);
+      const r = w.legs[v] * w.feet[v] * w.right[v];
+      pt[0] += (l - r) * sweep * c;
+      pt[1] -= (l * Math.max(0, s) + r * Math.max(0, -s)) * lift;
+      // a hand waving about the elbow, or a coin being bitten
+      const p = part[v];
+      if (p && rig.hand) turn(elbowX, elbowY, pose.wave * p);
+      if (p && rig.bite) pt[1] -= pose.bite * p;
+      // breathing: the chest swells, the shoulders and head rise and fall
+      const swell = 1 + 0.012 * pose.breath * w.chest[v];
+      pt[0] = CHEST[0] + (pt[0] - CHEST[0]) * swell;
+      pt[1] = CHEST[1] + (pt[1] - CHEST[1]) * swell - 3 * pose.breath * w.shoulders[v];
+      turn(AHOGE_ROOT[0], AHOGE_ROOT[1], pose.ahoge * w.ahoge[v]);
+      turn(NECK[0], NECK[1], pose.head * w.head[v] * (1 - p));
+      // her hair, skirt hem and tail trailing
+      const hair = w.hair[v] * (1 - p);
+      pt[0] += pose.hair[0] * hair + pose.skirt[0] * w.skirt[v];
+      pt[1] += pose.hair[1] * hair + pose.skirt[1] * w.skirt[v];
+      turn(HIPS[0], HIPS[1], pose.bend * w.upper[v]);
+      turn(TAIL_ROOT[0], TAIL_ROOT[1], pose.tail * w.tail[v]);
+      // rising over the standing leg
+      pt[1] -= bob * (1 - w.legs[v]);
+      const x = pose.mirror ? TEX[0] - pt[0] : pt[0];
+      at[2 * v] = (x / TEX[0] + PAD[0]) / (1 + 2 * PAD[0]);
+      at[2 * v + 1] = (pt[1] / TEX[1] + PAD[1]) / (1 + 2 * PAD[1]);
+    }
+  }
+
+  // Which point of the picture (as fractions of it) is drawn at (x, y) on the
+  // canvas (as fractions of it), as the mesh was last bent; the one in front
+  // where parts overlap, or null if none is.
+  function pick(mesh, x, y) {
+    const { at, uv, index } = mesh;
+    for (let k = index.length - 3; k >= 0; k -= 3) {
+      const a = 2 * index[k];
+      const b = 2 * index[k + 1];
+      const c = 2 * index[k + 2];
+      const [ax, ay, bx, by, cx, cy] = [at[a], at[a + 1], at[b], at[b + 1], at[c], at[c + 1]];
+      if (x < Math.min(ax, bx, cx) || x > Math.max(ax, bx, cx) || y < Math.min(ay, by, cy) || y > Math.max(ay, by, cy)) continue;
+      const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+      if (!d) continue;
+      const la = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
+      const lb = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
+      const lc = 1 - la - lb;
+      if (la < -1e-6 || lb < -1e-6 || lc < -1e-6) continue;
+      return [la * uv[a] + lb * uv[b] + lc * uv[c], la * uv[a + 1] + lb * uv[b + 1] + lc * uv[c + 1]];
+    }
+    return null;
+  }
 
   const VERTEX = `#version 300 es
-precision highp float;
+in vec2 a_at;
 in vec2 a_uv;
-uniform vec2 u_tex;
-uniform vec2 u_pad;
-uniform float u_mirror;  // -1: facing right (drawn mirrored)
-uniform float u_breath;  // -1 (out) .. 1 (in)
-uniform vec2 u_hair;     // how far the ends of her hair swing, px
-uniform vec2 u_skirt;    // ...and her skirt hem and tail
-uniform float u_ahoge;   // the strand of hair on top of her head bobbing, rad
-uniform float u_head;    // head tilt about the neck, rad
-uniform float u_bend;    // upper body lean about the hips, rad
-uniform float u_tail;    // tail wag about where it comes out, rad
-uniform vec4 u_step;     // walking: phase, how far the feet swing, how high they lift, how high she rises, px
-uniform vec4 u_part;     // a part moving on its own (a hand, a coin): centre, radius...
-uniform vec4 u_move;     // ...turned about (x, y) by u_part.w and shifted by (z, w)
 out vec2 v_uv;
 
-float ramp(float v, float a, float b) { return smoothstep(a, b, v); }
-vec2 turn(vec2 p, vec2 c, float a) {
-  vec2 d = p - c;
-  float s = sin(a), k = cos(a);
-  return c + vec2(d.x * k - d.y * s, d.x * s + d.y * k);
-}
-
 void main() {
-  vec2 p0 = a_uv * u_tex;
-  vec2 p = p0;
-  float x = p0.x, y = p0.y;
-
-  // regions: soft 0..1 weights on the picture
-  float tail = max(ramp(y, 996.0, 1030.0) * ramp(x, 548.0, 585.0), ramp(x, 772.0, 805.0) * ramp(y, 700.0, 745.0));
-  float legs = ramp(y, 985.0, 1075.0) * (1.0 - tail);  // below the skirt
-  float right = ramp(x, 418.0, 440.0);                  // the leg on the right of the picture
-  float feet = ramp(y, 1060.0, 1185.0);                 // the feet, and the shins bending to them
-  float part = u_part.z > 0.0 ? 1.0 - ramp(length(p0 - u_part.xy), 0.55 * u_part.z, u_part.z) : 0.0;
-  float head = (1.0 - ramp(y, 335.0, 425.0)) * (1.0 - part);
-  float upper = (1.0 - ramp(y, 600.0, 960.0)) * (1.0 - tail); // above the hips
-  float sides = max(1.0 - ramp(x, 160.0, 345.0), ramp(x, 600.0, 790.0));
-  float hair = sides * ramp(y, 280.0, 620.0) * (1.0 - ramp(y, 680.0, 780.0)) * (1.0 - tail) * (1.0 - part);
-  float skirt = ramp(y, 760.0, 990.0) * (1.0 - legs) * (1.0 - tail) * (0.55 + 0.45 * min(1.0, abs(x - 455.0) / 320.0));
-  vec2 root = vec2(398.0, 58.0);                        // of the strand on her head
-  float ahoge = ramp(50.0 + 0.62 * (400.0 - x) - y, 0.0, 14.0) * ramp(length(p0 - root), 12.0, 90.0);
-
-  // walking: her feet take turns to lift and swing forward (to the left, as
-  // drawn), then push back along the floor, and she rises over the standing leg
-  float c = cos(u_step.x), s = sin(u_step.x);
-  float l = legs * feet * (1.0 - right), r = legs * feet * right;
-  p.x += (l - r) * u_step.y * c;
-  p.y -= (l * max(0.0, s) + r * max(0.0, -s)) * u_step.z;
-
-  // a hand waving or a coin being bitten
-  p = turn(p, u_move.xy, u_part.w * part) + part * u_move.zw;
-
-  // breathing: the chest swells, the shoulders and head rise and fall
-  vec2 chest = vec2(465.0, 520.0);
-  float near = clamp(1.0 - length(p0 - chest) / 300.0, 0.0, 1.0);
-  p = chest + (p - chest) * (1.0 + 0.012 * u_breath * near * near);
-  p.y -= (3.0 + 3.0 * u_breath) * (1.0 - ramp(y, 430.0, 760.0));
-
-  p = turn(p, root, u_ahoge * ahoge);
-  p = turn(p, vec2(465.0, 398.0), u_head * head);
-  p += u_hair * hair + u_skirt * max(skirt, 0.8 * tail);
-  p = turn(p, vec2(465.0, 900.0), u_bend * upper);
-  p = turn(p, vec2(600.0, 1050.0), u_tail * tail);
-  p.y -= u_step.w * (1.0 - legs);
-
-  if (u_mirror < 0.0) p.x = u_tex.x - p.x;
-  vec2 q = (p / u_tex + u_pad) / (1.0 + 2.0 * u_pad);
-  gl_Position = vec4(q.x * 2.0 - 1.0, 1.0 - q.y * 2.0, 0.0, 1.0);
+  gl_Position = vec4(a_at.x * 2.0 - 1.0, 1.0 - a_at.y * 2.0, 0.0, 1.0);
   v_uv = a_uv;
 }`;
 
@@ -128,9 +212,6 @@ void main() {
   color = textureGrad(u_img, p / u_tex, dFdx(v_uv), dFdy(v_uv));
 }`;
 
-  const UNIFORMS = ['u_tex', 'u_pad', 'u_mirror', 'u_breath', 'u_hair', 'u_skirt', 'u_ahoge', 'u_head', 'u_bend', 'u_tail',
-    'u_step', 'u_part', 'u_move', 'u_img', 'u_eye1', 'u_eye2', 'u_blink'];
-
   function compile(gl, type, source) {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -157,30 +238,26 @@ void main() {
       return null;
     }
     gl.useProgram(program);
-    const u = Object.fromEntries(UNIFORMS.map((name) => [name, gl.getUniformLocation(program, name)]));
+    const u = Object.fromEntries(['u_img', 'u_tex', 'u_eye1', 'u_eye2', 'u_blink'].map((name) => [name, gl.getUniformLocation(program, name)]));
 
-    // the mesh: a grid over the picture
-    const [cols, rows] = GRID;
-    const uv = [];
-    for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) uv.push(i / cols, j / rows);
-    const index = [];
-    for (let j = 0; j < rows; j++) {
-      for (let i = 0; i < cols; i++) {
-        const a = j * (cols + 1) + i;
-        index.push(a, a + 1, a + cols + 1, a + 1, a + cols + 2, a + cols + 1);
-      }
-    }
+    const mesh = makeMesh();
+    bend(mesh, REST);
     gl.bindVertexArray(gl.createVertexArray());
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(program, 'a_uv');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const attribute = (name, data, usage) => {
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, data, usage);
+      const loc = gl.getAttribLocation(program, name);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      return buffer;
+    };
+    attribute('a_uv', mesh.uv, gl.STATIC_DRAW);
+    const positions = attribute('a_at', mesh.at, gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(index), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.index, gl.STATIC_DRAW);
 
     gl.uniform2f(u.u_tex, TEX[0], TEX[1]);
-    gl.uniform2f(u.u_pad, PAD[0], PAD[1]);
     gl.uniform1i(u.u_img, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -191,7 +268,7 @@ void main() {
     const textures = new Map();
     let textureHeight = 0;
     let shown = null; // [key, image]
-    let rig = {};
+    let rig = NO_RIG;
 
     function upload(image) {
       const h = Math.min(image.naturalHeight, textureHeight);
@@ -222,12 +299,13 @@ void main() {
     }
 
     // Show a sprite (an <img> that has loaded) with its rig: { eyes, hand, bite }.
-    function show(key, image, spriteRig = {}) {
+    function show(key, image, spriteRig) {
       if (!textureHeight) textureHeight = drawnHeight();
       if (!textures.has(key)) textures.set(key, upload(image));
       gl.bindTexture(gl.TEXTURE_2D, textures.get(key));
       shown = [key, image];
-      rig = spriteRig;
+      rig = spriteRig || NO_RIG;
+      setRig(mesh, rig);
     }
 
     // Draw her in `pose` (see motion.js), at the canvas's size on screen.
@@ -247,37 +325,22 @@ void main() {
       gl.viewport(0, 0, w, h);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(u.u_mirror, pose.mirror ? -1 : 1);
-      gl.uniform1f(u.u_breath, pose.breath);
-      gl.uniform2f(u.u_hair, pose.hair[0], pose.hair[1]);
-      gl.uniform2f(u.u_skirt, pose.skirt[0], pose.skirt[1]);
-      gl.uniform1f(u.u_ahoge, pose.ahoge);
-      gl.uniform1f(u.u_head, pose.head);
-      gl.uniform1f(u.u_bend, pose.bend);
-      gl.uniform1f(u.u_tail, pose.tail);
-      gl.uniform4f(u.u_step, ...pose.step);
-      // a hand [x, y, radius, wrist x, wrist y] waves; a coin [x, y, radius] is bitten
-      if (rig.hand) {
-        const [x, y, r, px, py] = rig.hand;
-        gl.uniform4f(u.u_part, x, y, r, pose.wave);
-        gl.uniform4f(u.u_move, px, py, 0, 0);
-      } else if (rig.bite) {
-        const [x, y, r] = rig.bite;
-        gl.uniform4f(u.u_part, x, y, r, 0);
-        gl.uniform4f(u.u_move, x, y, 0, -pose.bite);
-      } else {
-        gl.uniform4f(u.u_part, 0, 0, 0, 0);
-        gl.uniform4f(u.u_move, 0, 0, 0, 0);
-      }
+      bend(mesh, pose);
+      gl.bindBuffer(gl.ARRAY_BUFFER, positions);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh.at);
       const none = [0, 0, 0, 0];
       gl.uniform4fv(u.u_eye1, rig.eyes?.[0] || none);
       gl.uniform4fv(u.u_eye2, rig.eyes?.[1] || none);
       gl.uniform1f(u.u_blink, pose.blink);
-      gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+      gl.drawElements(gl.TRIANGLES, mesh.index.length, gl.UNSIGNED_SHORT, 0);
     }
 
-    return { show, draw, lost: () => gl.isContextLost() };
+    // Which point of her picture (as fractions of it) is drawn at (x, y) on
+    // the canvas (as fractions of it), or null.
+    const pickAt = (x, y) => pick(mesh, x, y);
+
+    return { show, draw, pick: pickAt, lost: () => gl.isContextLost() };
   }
 
-  return { create, PAD };
+  return { create, PAD, makeMesh, setRig, bend, pick, REST };
 })();

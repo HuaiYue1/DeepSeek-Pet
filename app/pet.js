@@ -32,6 +32,7 @@ const images = {}; // the sprites, loaded
 let puppet = null; // drawing her part by part (puppet.js), if there is WebGL2
 const motion = Motion.create();
 let look = 0; // a head tilt she looks about with
+let shows = 0; // sprites shown so far: showing the same one again starts it over
 let petH = 300;
 let current = 'idle';
 let interactive = false;
@@ -113,6 +114,7 @@ function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = fal
   stopWalking();
   petEl.dataset.act = '';
   current = key;
+  shows += 1;
   look = 0;
   sprite.src = sprites[key];
   puppet?.show(key, images[key], rigs[key]);
@@ -500,33 +502,40 @@ function buildHitMap(key, url) {
   });
 }
 
-// Her picture's box on screen, as it bobs and hops.
-function spriteRect() {
-  if (!puppet) return sprite.getBoundingClientRect();
-  const r = canvas.getBoundingClientRect(); // with room around her box
-  const [px, py] = Puppet.PAD;
-  const w = r.width / (1 + 2 * px);
-  const h = r.height / (1 + 2 * py);
-  return { left: r.left + px * w, top: r.top + py * h, width: w, height: h };
-}
-
-function overPet(x, y) {
+// Which point of her picture (as fractions of it) is at (x, y) in the
+// window, or null if none is.
+function spritePoint(x, y) {
+  const box = petEl.getBoundingClientRect();
+  if (puppet) {
+    // in her box, undoing her tilt and squash, and then her hop, which is
+    // about her feet; then on the canvas, and back through how she is bent
+    const [bx, by] = boxPoint(x, y);
+    const b = motion.body;
+    const qx = box.width / 2 + (bx - box.width / 2 - b.tx) / b.sx;
+    const qy = box.height + (by - box.height - b.ty) / b.sy;
+    const [px, py] = Puppet.PAD;
+    return puppet.pick((qx / box.width + px) / (1 + 2 * px), (qy / box.height + py) / (1 + 2 * py));
+  }
   // standing, the sprite's own box (it bobs and hops); tilted, undo the tilt
   let u, v;
   if (Swing.resting(swing)) {
-    const r = spriteRect();
+    const r = sprite.getBoundingClientRect();
     [u, v] = [(x - r.left) / r.width, (y - r.top) / r.height];
   } else {
-    const box = petEl.getBoundingClientRect();
     const [bx, by] = boxPoint(x, y);
     [u, v] = [bx / box.width, by / box.height];
   }
-  if (u < 0 || u >= 1 || v < 0 || v >= 1) return false;
-  if (petEl.classList.contains('mirrored')) u = 1 - u;
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return null;
+  return [petEl.classList.contains('mirrored') ? 1 - u : u, v];
+}
+
+function overPet(x, y) {
+  const at = spritePoint(x, y);
+  if (!at) return false;
   const map = hitMaps[current];
   if (!map) return true;
-  const px = Math.floor(u * map.w);
-  const py = Math.floor(v * map.h);
+  const px = Math.floor(at[0] * map.w);
+  const py = Math.floor(at[1] * map.h);
   // look a few pixels around so thin hair strands are easy to grab
   for (let dy = -4; dy <= 4; dy += 4) {
     for (let dx = -4; dx <= 4; dx += 4) {
@@ -597,6 +606,7 @@ function drawPuppet(dt) {
     at: [window.screenX, window.screenY],
     height: petH,
     sprite: current,
+    shows,
     act: petEl.dataset.act || '',
     held: dragging,
     tilt: swing.angle,

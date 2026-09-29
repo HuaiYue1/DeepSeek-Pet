@@ -45,6 +45,7 @@ const Motion = (() => {
       random,
       t: 0,
       sprite: '',
+      shows: null,
       spriteT: 0, // how long this sprite has been showing
       act: '',
       actT: 0, // how long she has been doing this
@@ -119,7 +120,8 @@ const Motion = (() => {
   // Advance by `dt` seconds. `now` is what she is up to:
   //   at        her window on screen (screen px)
   //   height    how tall she is on screen (screen px)
-  //   sprite    the sprite showing
+  //   sprite    the sprite showing, and `shows` counting the times one was
+  //             shown, so showing the same one again starts it over
   //   act       what she is doing: walk, run, jump, tap, dance, stretch, munch, wave or ''
   //   held      being carried, `tilt` tilted by this much (swing.js)
   //   mirrored  facing right
@@ -127,12 +129,13 @@ const Motion = (() => {
   function step(m, dt, now) {
     const r = m.random;
     m.t += dt;
+    const fresh = now.sprite !== m.sprite || now.shows !== m.shows; // a sprite was shown
     // turned round (rather than shown another way round with another sprite)
-    const turned = now.mirrored !== m.mirrored && now.sprite === m.sprite && !now.held;
+    const turned = now.mirrored !== m.mirrored && !fresh && !now.held;
     m.mirrored = now.mirrored;
     m.turnT = turned ? 0 : m.turnT + dt;
-    if (now.sprite !== m.sprite) {
-      m.sprite = now.sprite;
+    if (fresh) {
+      [m.sprite, m.shows] = [now.sprite, now.shows];
       m.spriteT = 0;
       if (now.sprite === 'aha') m.blinkIn = 0.45; // a surprised blink
     } else {

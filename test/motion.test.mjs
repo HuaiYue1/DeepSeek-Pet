@@ -105,3 +105,11 @@ test('she keeps still enough to be drawn less often when nothing is going on', (
   const { m: walker } = run(1, walkingLeft(0.2, 1));
   assert.equal(Motion.calm(walker), false);
 });
+
+test('showing the same sprite again starts it over', () => {
+  // clicked twice while happy: she hops again
+  const hopping = (t) => ({ sprite: 'happy', shows: t < 1.5 ? 1 : 2 });
+  const { frames } = run(2.5, hopping);
+  const up = (from, to) => Math.min(...frames.filter((f) => f.t >= from && f.t < to).map((f) => f.body.ty));
+  assert.ok(up(0, 1) < -5 && up(1.2, 1.5) === 0 && up(1.5, 2.5) < -5, 'hops, rests, hops again');
+});
