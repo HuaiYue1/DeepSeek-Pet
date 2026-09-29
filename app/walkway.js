@@ -43,17 +43,21 @@ export function neighbour(displays, here, dir) {
 }
 
 // Her screen; whether she is standing on its bottom edge (above the taskbar
-// or Dock, if there is one there: `taskbar` is its height); and which ways
-// she could walk on to another screen.
+// or Dock, if there is one there: `taskbar` is its height); how far she can
+// walk either way before its edge; and which ways she could walk on to
+// another screen.
 export function surroundings(win, pet, displays, cross) {
   const feet = feetOf(win, pet);
   const display = displayAt(displays, win.x + win.width / 2, feet - 1);
   const wa = display.workArea;
   const grounded = Math.abs(feet - bottom(wa)) <= 4;
+  const bodyLeft = win.x + (win.width - pet.w) / 2;
   return {
     display,
     grounded,
     taskbar: grounded ? Math.max(0, bottom(display.bounds) - bottom(wa)) : 0,
+    roomLeft: Math.max(0, bodyLeft - wa.x),
+    roomRight: Math.max(0, right(wa) - bodyLeft - pet.w),
     left: cross && !!neighbour(displays, display, -1),
     right: cross && !!neighbour(displays, display, 1),
   };

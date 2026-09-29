@@ -68,6 +68,13 @@ test('knows when she stands on a taskbar and which screens are next to hers', ()
   assert.deepEqual([air.grounded, air.taskbar, air.right], [false, 0, false]);
 });
 
+test('knows how far she can walk either way on her screen', () => {
+  const s = surroundings(at(800, 1040), pet, [A, B], true);
+  assert.deepEqual([s.roomLeft, s.roomRight], [800, 1920 - 800 - 204]);
+  const past = surroundings(at(1800, 1040), pet, [A], true); // dragged half off it
+  assert.equal(past.roomRight, 0);
+});
+
 test('screens that only touch at a corner are not neighbours', () => {
   const C = display(3, 1920, 1080, 1920, 1080);
   assert.equal(neighbour([A, C], A, 1), null);

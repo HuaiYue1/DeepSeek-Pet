@@ -371,10 +371,12 @@ ipcMain.handle('pet:where', () => {
   const g = geometry();
   const here = surroundings({ ...win.getBounds(), width: g.width, height: g.height }, { w: g.petW, h: g.petH, floor: g.floor },
     screen.getAllDisplays(), settings.roam && settings.crossScreens);
-  return { onTaskbar: here.taskbar >= 20, left: here.left, right: here.right };
+  return { onTaskbar: here.taskbar >= 20, roomLeft: here.roomLeft, roomRight: here.roomRight, left: here.left, right: here.right };
 });
 
-// Pretending to click the taskbar: be in front of it while she does.
+// Pretending to click the taskbar: be in front of it while she does. Only
+// if she is kept on top anyway: otherwise you asked her not to cover your
+// windows, and she could not get in front of the taskbar in any case.
 ipcMain.on('pet:raise', () => {
   if (settings.onTop) win?.moveTop();
 });

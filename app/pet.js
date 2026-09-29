@@ -314,23 +314,28 @@ function jog() {
   walk({ run: true, distance: petEl.offsetHeight * rand(1.2, 2.5), line: 'run' });
 }
 
-// A long walk, over to the screen next door.
-function visit(where) {
+// A long walk, over to the screen next door and a little way into it.
+function visit(where = {}) {
   const dir = where.left && where.right ? random([-1, 1]) : where.left ? -1 : 1;
-  walk({ dir, distance: petEl.offsetHeight * rand(3, 6), line: 'visit' });
+  const toEdge = (dir < 0 ? where.roomLeft : where.roomRight) || 0;
+  walk({ dir, distance: toEdge + petEl.offsetHeight * rand(1, 2.5), line: 'visit' });
 }
 
-// Walk a little way along the taskbar she is standing on, then pretend to
-// click whatever is under her hand.
-function tapTaskbar() {
-  const tap = () => {
+// Walk a little way along the taskbar she is standing on (not off this
+// screen), then pretend to click whatever is under her hand.
+function tapTaskbar(where = {}) {
+  const tap = async () => {
+    const here = await window.pet.where().catch(() => ({}));
+    if (!here.onTaskbar || busyNow()) return; // moved off it, or doing something else by now
     window.pet.raise();
     show('idle', { line: eventLine('taskbar'), ms: 3600 });
     playAct('tap', 1500);
     fx('ripple', 3, 500);
     later('next', 2300, () => say(eventLine('taskbarAfter'), { ms: 2400 }));
   };
-  if (roam) walk({ distance: petEl.offsetHeight * rand(0.3, 1.2), line: null, then: tap });
+  const distance = petEl.offsetHeight * rand(0.3, 1.2);
+  const dirs = [-1, 1].filter((d) => ((d < 0 ? where.roomLeft : where.roomRight) || 0) > distance);
+  if (roam && dirs.length) walk({ dir: random(dirs), distance, line: null, then: tap });
   else tap();
 }
 
