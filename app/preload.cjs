@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('pet', {
   dragTick: () => ipcRenderer.invoke('pet:drag-tick'),
   dragEnd: () => ipcRenderer.invoke('pet:drag-end'),
   walk: (dx) => ipcRenderer.invoke('pet:walk', dx),
+  where: () => ipcRenderer.invoke('pet:where'),
+  raise: () => ipcRenderer.send('pet:raise'),
   showMenu: () => ipcRenderer.send('pet:menu'),
   onCommand: (fn) => ipcRenderer.on('pet:command', (_e, command) => fn(command)),
 });

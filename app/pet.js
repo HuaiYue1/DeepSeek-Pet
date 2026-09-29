@@ -101,7 +101,7 @@ function hideBubble() {
 // Whatever she was doing (walking, dancing...) stops.
 function show(key, { line, ms = 3600, then = 'idle', typing = false, quiet = false } = {}) {
   if (!sprites[key]) return;
-  stop('back', 'think', 'act');
+  stop('back', 'think', 'act', 'next');
   stopWalking();
   petEl.dataset.act = '';
   current = key;
@@ -196,6 +196,8 @@ const EFFECTS = {
   spark: { text: ['✦'], x: [0.24, 0.8], y: [0.02, 0.2], dx: [-10, 10], dy: [-12, -26], size: [12, 18], color: ['#F2C230', '#8FB1FF'], ms: 900 },
   sweat: { x: [0.3, 0.72], y: [0.08, 0.16], dx: [-6, 6], dy: [18, 30], size: [9, 12], ms: 1100 },
   coin: { text: ['T'], x: [0.52, 0.52], y: [0.22, 0.24], dx: [-70, 70], dy: [0, 0], size: [15, 18], ms: 900 },
+  // a click on the taskbar, under her hand in front of her
+  ripple: { x: () => (facing > 0 ? [0.66, 0.74] : [0.26, 0.34]), y: [1.025, 1.035], dx: [0, 0], dy: [0, 0], size: [36, 42], ms: 700 },
 };
 
 function fx(kind, count = 1, every = 250) {
@@ -209,7 +211,7 @@ function spawn(kind) {
   el.className = `fx fx-${kind}`;
   if (e.text) el.textContent = random(e.text);
   const set = (name, value) => el.style.setProperty(name, value);
-  set('--x', `${rand(...e.x) * 100}%`);
+  set('--x', `${rand(...(typeof e.x === 'function' ? e.x() : e.x)) * 100}%`);
   set('--y', `${rand(...e.y) * 100}%`);
   set('--dx', `${rand(...e.dx) * k}px`);
   set('--dy', `${rand(...e.dy) * k}px`);
@@ -222,29 +224,49 @@ function spawn(kind) {
 
 // ---------------------------------------------------------------- on her own
 
-// Walk a little way along the screen, waddling, and turn round at its edges.
-// The main process moves the window; this asks for a step every frame.
-function walk() {
+// Walk (or jog) a way along her floor, waddling. The main process moves the
+// window (see walkway.js): at the edge of her screen she turns round, or
+// walks on to the next screen, hopping onto its floor if that is higher or
+// lower. `then` runs once she has got there.
+function walk({ dir = Math.random() < 0.5 ? -1 : 1, distance, run = false, line = 'walk', then } = {}) {
   const h = petEl.offsetHeight;
-  const dir = Math.random() < 0.5 ? -1 : 1;
   show('idle', { quiet: true, ms: 0 });
   turn(dir);
-  walking = { dir, speed: WALK_SPEED * h, left: h * rand(0.6, 1.8), acc: 0, pending: false, pause: 0, stuck: 0 };
-  petEl.dataset.act = 'walk';
-  if (Math.random() < 0.5) say(eventLine('walk'), { ms: 2600 });
+  walking = {
+    dir,
+    speed: WALK_SPEED * h * (run ? 2.2 : 1),
+    left: distance ?? h * rand(0.6, 1.8),
+    act: run ? 'run' : 'walk',
+    then,
+    acc: 0,
+    pending: false,
+    pause: 0,
+    stuck: 0,
+  };
+  petEl.dataset.act = walking.act;
+  if (line && Math.random() < 0.6) say(eventLine(line), { ms: 2600 });
   animate();
 }
 
 function stopWalking() {
   if (!walking) return;
   walking = null;
-  if (petEl.dataset.act === 'walk') petEl.dataset.act = '';
+  if (['walk', 'run', 'jump'].includes(petEl.dataset.act)) petEl.dataset.act = '';
+}
+
+function arrived(w) {
+  stopWalking();
+  w.then?.();
 }
 
 function stepWalk(dt) {
   const w = walking;
   if (w.pause > 0) {
     w.pause -= dt;
+    if (w.pause <= 0) {
+      if (w.left <= 0) arrived(w);
+      else petEl.dataset.act = w.act; // landed from a hop: walk on
+    }
     return;
   }
   w.acc += w.dir * w.speed * dt;
@@ -252,10 +274,17 @@ function stepWalk(dt) {
   if (w.pending || !dx) return;
   w.acc -= dx;
   w.pending = true;
-  window.pet.walk(dx).then(({ moved }) => {
+  window.pet.walk(dx).then(({ moved, busy, hop }) => {
     w.pending = false;
-    if (walking !== w) return;
+    if (walking !== w || busy) return;
     w.left -= Math.abs(moved);
+    if (hop) {
+      // on to the next screen, jumping up or down onto its floor
+      w.pause = hop / 1000;
+      petEl.dataset.act = 'jump';
+      if (Math.random() < 0.7) say(eventLine('arrive'), { ms: 2600 });
+      return;
+    }
     if (moved) {
       w.stuck = 0;
     } else if (++w.stuck > 2) {
@@ -269,7 +298,7 @@ function stepWalk(dt) {
       turn(w.dir);
       if (Math.random() < 0.6) say(eventLine('turn'), { ms: 2200 });
     }
-    if (w.left <= 0) stopWalking();
+    if (w.left <= 0) arrived(w);
   }, stopWalking);
 }
 
@@ -279,6 +308,36 @@ function playAct(name, ms) {
   later('act', ms, () => {
     if (petEl.dataset.act === name) petEl.dataset.act = '';
   });
+}
+
+function jog() {
+  walk({ run: true, distance: petEl.offsetHeight * rand(1.2, 2.5), line: 'run' });
+}
+
+// A long walk, over to the screen next door.
+function visit(where) {
+  const dir = where.left && where.right ? random([-1, 1]) : where.left ? -1 : 1;
+  walk({ dir, distance: petEl.offsetHeight * rand(3, 6), line: 'visit' });
+}
+
+// Walk a little way along the taskbar she is standing on, then pretend to
+// click whatever is under her hand.
+function tapTaskbar() {
+  const tap = () => {
+    window.pet.raise();
+    show('idle', { line: eventLine('taskbar'), ms: 3600 });
+    playAct('tap', 1500);
+    fx('ripple', 3, 500);
+    later('next', 2300, () => say(eventLine('taskbarAfter'), { ms: 2400 }));
+  };
+  if (roam) walk({ distance: petEl.offsetHeight * rand(0.3, 1.2), line: null, then: tap });
+  else tap();
+}
+
+function jump() {
+  show('happy', { line: eventLine('jump'), ms: 2400 });
+  playAct('jump', 450);
+  later('next', 650, () => playAct('jump', 450));
 }
 
 function dance() {
@@ -296,9 +355,9 @@ function lookAround() {
   show('idle', { line: eventLine('look'), ms: 2800 });
   fx('question');
   const was = facing;
-  later('look', 600, () => {
+  later('next', 600, () => {
     turn(-was);
-    later('look', 900, () => turn(was));
+    later('next', 900, () => turn(was));
   });
 }
 
@@ -322,30 +381,56 @@ function chat() {
   show('idle', { line: chatLine(), ms: 4200 });
 }
 
-// What she does every so often when nobody is playing with her, and how
-// likely each is.
+// Minutes until DeepSeek's off-peak discount (Beijing 00:30–08:30) starts,
+// or until it ends if it is on now.
+function offPeakCountdown() {
+  const minute = Math.floor((Date.now() / 60000 + 8 * 60) % 1440);
+  return minute >= 30 && minute < 510 ? { during: true, minutes: 510 - minute } : { during: false, minutes: (1470 - minute) % 1440 };
+}
+
+// She glances at the clock on your taskbar and does the DeepSeek maths.
+function clock() {
+  const now = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const { during, minutes } = offPeakCountdown();
+  const left = minutes >= 60 ? `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分` : `${minutes} 分钟`;
+  show('idle', { line: eventLine(during ? 'clockOffPeak' : 'clock').replace('{time}', time).replace('{left}', left), ms: 4600 });
+}
+
+// What she does every so often when nobody is playing with her, how likely
+// each is, and when it makes sense (`where`: what is around her, from the
+// main process).
 const ACTIVITIES = [
-  { weight: 30, run: walk, when: () => roam },
-  { weight: 14, run: deepThink },
-  { weight: 9, run: dance },
-  { weight: 8, run: stretch },
-  { weight: 8, run: lookAround },
-  { weight: 8, run: munch },
-  { weight: 7, run: wave },
-  { weight: 6, run: chat },
-  { weight: 5, run: sweat },
-  { weight: 5, run: () => show('sideeye', { ms: 3200 }) },
+  { weight: 24, run: () => walk(), when: () => roam },
+  { weight: 8, run: jog, when: () => roam },
+  { weight: 10, run: visit, when: (where) => roam && (where.left || where.right) },
+  { weight: 10, run: tapTaskbar, when: (where) => where.onTaskbar },
+  { weight: 12, run: deepThink },
+  { weight: 8, run: dance },
+  { weight: 6, run: jump },
+  { weight: 6, run: stretch },
+  { weight: 6, run: lookAround },
+  { weight: 7, run: munch },
+  { weight: 5, run: wave },
+  { weight: 5, run: clock },
+  { weight: 5, run: chat },
+  { weight: 4, run: sweat },
+  { weight: 4, run: () => show('sideeye', { ms: 3200 }) },
 ];
 
-function ambient() {
-  later('ambient', rand(7000, 15000), ambient);
-  if (current !== 'idle' || pressed || dragging || walking) return;
-  const options = ACTIVITIES.filter((a) => !a.when || a.when());
+const busyNow = () => current !== 'idle' || pressed || dragging || walking;
+
+async function ambient() {
+  later('ambient', rand(5000, 12000), ambient);
+  if (busyNow()) return;
+  const where = (await window.pet.where().catch(() => null)) || {};
+  if (busyNow()) return; // something happened while we asked
+  const options = ACTIVITIES.filter((a) => !a.when || a.when(where));
   let roll = Math.random() * options.reduce((sum, a) => sum + a.weight, 0);
   for (const a of options) {
     roll -= a.weight;
     if (roll < 0) {
-      a.run();
+      a.run(where);
       return;
     }
   }
