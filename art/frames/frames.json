@@ -1,0 +1,223 @@
+{
+  "about": "Animation frames for DeepSeek-Pet. Each frame is one original picture with only the masked part redrawn. Regions are in sprite pixels (908x1337, see ART_CANVAS in art/states.mjs); masks.py maps them onto the originals. Paths are relative to this folder.",
+  "size": "1024x1536",
+  "frames": [
+    {
+      "name": "idle-blink",
+      "zh": "闭眼（眨眼）",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/idle-blink.png",
+      "out": "out/idle-blink.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [382.0, 277.0, 42.0, 35.0],
+          [487.5, 256.5, 44.5, 36.5]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes."
+    },
+    {
+      "name": "idle-half",
+      "zh": "眼睛半闭（眨眼到一半）",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/idle-half.png",
+      "out": "out/idle-half.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [382.0, 277.0, 42.0, 35.0],
+          [487.5, 256.5, 44.5, 36.5]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Half-close both eyes, as halfway through a blink: the upper eyelids come down to cover the upper half of each iris, and the lower half of each blue iris is still visible. Same lashes, same eye shape at the corners."
+    },
+    {
+      "name": "hello-blink",
+      "zh": "闭眼（眨眼）",
+      "image": "../raw/hd/hello.png",
+      "mask": "masks/hello-blink.png",
+      "out": "out/hello-blink.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [387.5, 281.0, 39.5, 36.0],
+          [487.5, 260.0, 43.5, 36.0]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes."
+    },
+    {
+      "name": "think-blink",
+      "zh": "闭眼（眨眼）",
+      "image": "../raw/hd/think.png",
+      "mask": "masks/think-blink.png",
+      "out": "out/think-blink.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [380.0, 276.0, 37.0, 35.0],
+          [483.0, 251.0, 43.0, 37.0]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes."
+    },
+    {
+      "name": "aha-blink",
+      "zh": "闭眼（眨眼）",
+      "image": "../raw/hd/aha.png",
+      "mask": "masks/aha-blink.png",
+      "out": "out/aha-blink.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [383.5, 277.0, 39.5, 35.0],
+          [486.0, 259.0, 42.0, 37.0]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes."
+    },
+    {
+      "name": "eat-blink",
+      "zh": "闭眼（眨眼）",
+      "image": "../raw/hd/eat.png",
+      "mask": "masks/eat-blink.png",
+      "out": "out/eat-blink.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [387.5, 281.0, 39.5, 35.0],
+          [487.5, 259.0, 43.5, 36.0]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes."
+    },
+    {
+      "name": "idle-look",
+      "zh": "眼珠看向画面右边",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/idle-look.png",
+      "out": "out/idle-look.png",
+      "area": "both eyes",
+      "region": {
+        "ellipses": [
+          [382.0, 277.0, 42.0, 35.0],
+          [487.5, 256.5, 44.5, 36.5]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY both eyes. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Move only her irises and pupils so that she glances toward the right side of the image. The eyelids, lashes, eye shape and highlights stay the same."
+    },
+    {
+      "name": "idle-talk",
+      "zh": "小嘴微张（说话）",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/idle-talk.png",
+      "out": "out/idle-talk.png",
+      "area": "the mouth",
+      "region": {
+        "ellipses": [
+          [440, 314, 32, 14]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the mouth. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Open her mouth slightly, as if in the middle of saying something: a small, softly open mouth showing a little of the inside, in the same gentle smiling shape and the same lip colour."
+    },
+    {
+      "name": "walk-a",
+      "zh": "走路：画面左边的脚抬起",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/walk-a.png",
+      "out": "out/walk-a.png",
+      "area": "the legs and feet below the hem of the skirt",
+      "region": {
+        "rects": [
+          [295, 985, 550, 1337]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the legs and feet below the hem of the skirt. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Bend the knee of the leg on the LEFT side of the image and lift that foot about one shoe-height off the ground, toes pointing slightly down, as in a walking step. The leg on the RIGHT side of the image stays straight with its foot flat on the ground. Same socks and same shoes."
+    },
+    {
+      "name": "walk-b",
+      "zh": "走路：画面右边的脚抬起",
+      "image": "../raw/hd/idle.png",
+      "mask": "masks/walk-b.png",
+      "out": "out/walk-b.png",
+      "area": "the legs and feet below the hem of the skirt",
+      "region": {
+        "rects": [
+          [295, 985, 550, 1337]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the legs and feet below the hem of the skirt. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Bend the knee of the leg on the RIGHT side of the image and lift that foot about one shoe-height off the ground, toes pointing slightly down, as in a walking step. The leg on the LEFT side of the image stays straight with its foot flat on the ground. Same socks and same shoes."
+    },
+    {
+      "name": "carry-a",
+      "zh": "被拎起：双脚悬空，左腿蹬起",
+      "image": "../raw/hd/aha.png",
+      "mask": "masks/carry-a.png",
+      "out": "out/carry-a.png",
+      "area": "the legs and feet below the hem of the skirt",
+      "region": {
+        "rects": [
+          [295, 985, 550, 1337]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the legs and feet below the hem of the skirt. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: She is being lifted off the ground, so both feet dangle in the air with the toes pointing down. Bend the knee of the leg on the LEFT side of the image and raise it a little, as if kicking; the leg on the RIGHT side of the image hangs straight down. Same socks and same shoes."
+    },
+    {
+      "name": "carry-b",
+      "zh": "被拎起：双脚悬空，右腿蹬起",
+      "image": "../raw/hd/aha.png",
+      "mask": "masks/carry-b.png",
+      "out": "out/carry-b.png",
+      "area": "the legs and feet below the hem of the skirt",
+      "region": {
+        "rects": [
+          [295, 985, 550, 1337]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the legs and feet below the hem of the skirt. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: She is being lifted off the ground, so both feet dangle in the air with the toes pointing down. Bend the knee of the leg on the RIGHT side of the image and raise it a little, as if kicking; the leg on the LEFT side of the image hangs straight down. Same socks and same shoes."
+    },
+    {
+      "name": "hello-wave",
+      "zh": "挥手：手掌摆向另一边",
+      "image": "../raw/hd/hello.png",
+      "mask": "masks/hello-wave.png",
+      "out": "out/hello-wave.png",
+      "area": "the raised hand",
+      "region": {
+        "ellipses": [
+          [645, 390, 56, 58]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the raised hand. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Tilt the raised open hand at the wrist about 25 degrees toward her face, fingers still spread, as the other end of a waving motion. Same hand size, same skin colour, the sleeve cuff unchanged."
+    },
+    {
+      "name": "happy-wave",
+      "zh": "挥手：手掌摆向另一边",
+      "image": "../raw/hd/happy.png",
+      "mask": "masks/happy-wave.png",
+      "out": "out/happy-wave.png",
+      "area": "the raised hand",
+      "region": {
+        "ellipses": [
+          [670, 390, 56, 58]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the raised hand. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Tilt the raised open hand at the wrist about 25 degrees toward her face, fingers still spread, as the other end of a waving motion. Same hand size, same skin colour, the sleeve cuff unchanged."
+    },
+    {
+      "name": "eat-chew",
+      "zh": "闭嘴鼓着腮帮在嚼",
+      "image": "../raw/hd/eat.png",
+      "mask": "masks/eat-chew.png",
+      "out": "out/eat-chew.png",
+      "area": "the mouth and cheeks",
+      "region": {
+        "rects": [
+          [395, 280, 510, 322]
+        ]
+      },
+      "prompt": "Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY the mouth and cheeks. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.\n\nThe change: Close her mouth and puff out her cheeks as if chewing a mouthful. The coin, her hands and her eyes stay exactly the same."
+    }
+  ]
+}

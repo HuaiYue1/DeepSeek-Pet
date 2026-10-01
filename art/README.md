@@ -55,6 +55,7 @@
 | `character-sheet.png` | 角色设定图，1800×1200 |
 | `states.mjs` | 台词本（各状态和各种事的台词）、状态名，以及要写的字、图标取景的位置 |
 | `prompts.md` | AI 绘图提示词 |
+| `frames/` | 动作帧（眨眼、走路等）：原图上要重画的区域、遮罩、提示词和生成脚本，见 [`frames/README.md`](frames/README.md) |
 | `cutout.py` | 对齐脚本；白底的图也能先抠图再对齐 |
 | `build.mjs`、`sheet.mjs` | 写字、做图标、排设定图的脚本 |
 

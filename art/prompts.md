@@ -56,38 +56,7 @@ AI 画中文字经常出错，所以牌子、气泡里的字都留空，之后�
 
 ## 动作帧：让她像真人一样动
 
-只靠一张图做动作，要么整张图晃来晃去像纸片，要么把图局部拉伸变形，看着很诡异。所以改用动画片的做法：多画几帧，程序按顺序切换。
-
-ChatGPT 改图时会把整张图重画一遍，动作改得越大，脸、衣服、比例就跑得越多，帧和帧之间也对不上。所以每一帧**只改一小块**：眼睛、嘴巴、举起的手，或者裙摆下面的腿。我这边只取改动的那一块，对齐后贴回原图，播放时才不会抖。
-
-### 每一帧的做法
-
-1. 在 ChatGPT 新开一个对话（每帧都新开），只上传表格里写的那一张原图（`art/raw/hd/` 里的同名图）。
-2. 推荐用 ChatGPT 的「选择」编辑：点开图片，用画笔只涂抹表格里写的那一块，再发送提示词。没有这个功能的话，直接把图和提示词一起发送。
-3. 提示词是「通用部分」加上这一帧的「改动」，用英文，ChatGPT 对英文的限制条件执行得更严格。
-4. 挑图只看改的那一块对不对、画风一不一致。别处有一点变化没关系。
-
-通用部分（`{area}` 换成表格里的英文区域）：
-
-```
-Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY {area}. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.
-```
-
-| 文件名 | 原图 | 涂抹的区域 | 英文区域 `{area}` | 改动（接在通用部分后面，前面加 `The change: `） |
-| --- | --- | --- | --- | --- |
-| `idle-blink.png` | idle | 两只眼睛 | both eyes | Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes. |
-| `idle-half.png` | idle | 两只眼睛 | both eyes | Half-close both eyes, as halfway through a blink: the upper eyelids come down to cover the upper half of each iris, and the lower half of each blue iris is still visible. Same lashes, same eye shape at the corners. |
-| `hello-blink.png`、`think-blink.png`、`aha-blink.png`、`eat-blink.png` | hello、think、aha、eat | 两只眼睛 | both eyes | 同 `idle-blink` |
-| `idle-look.png` | idle | 两只眼睛 | both eyes | Move only her irises and pupils so that she glances toward the right side of the image. The eyelids, lashes, eye shape and highlights stay the same. |
-| `idle-talk.png` | idle | 嘴巴 | the mouth | Open her mouth slightly, as if in the middle of saying something: a small, softly open mouth showing a little of the inside, in the same gentle smiling shape and the same lip colour. |
-| `walk-a.png` | idle | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | Bend the knee of the leg on the LEFT side of the image and lift that foot about one shoe-height off the ground, toes pointing slightly down, as in a walking step. The leg on the RIGHT side of the image stays straight with its foot flat on the ground. Same socks and same shoes. |
-| `walk-b.png` | idle | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | 同 `walk-a`，把 LEFT 和 RIGHT 对调 |
-| `carry-a.png` | aha | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | She is being lifted off the ground, so both feet dangle in the air with the toes pointing down. Bend the knee of the leg on the LEFT side of the image and raise it a little, as if kicking; the leg on the RIGHT side of the image hangs straight down. Same socks and same shoes. |
-| `carry-b.png` | aha | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | 同 `carry-a`，把 LEFT 和 RIGHT 对调 |
-| `hello-wave.png`、`happy-wave.png` | hello、happy | 举起的那只手 | the raised hand | Tilt the raised open hand at the wrist about 25 degrees toward her face, fingers still spread, as the other end of a waving motion. Same hand size, same skin colour, the sleeve cuff unchanged. |
-| `eat-chew.png` | eat | 嘴巴和两颊 | the mouth and cheeks | Close her mouth and puff out her cheeks as if chewing a mouthful. The coin, her hands and her eyes stay exactly the same. |
-
-画好以后传到 GitHub 上 `claude/deepseek-fat-fish-pet-07ov0e` 分支的 `art/raw/` 文件夹，或者直接在对话里发给我。
+眨眼、说话、走路、被拎起来乱蹬腿这些动作帧的原图、遮罩、提示词和生成脚本都在 [`frames/`](frames/README.md) 里：每一帧只重画原图上的一小块（眼睛、嘴巴、举起的手或裙摆下面的腿），这样帧和帧之间才对得上。
 
 ## 其他工具
 
