@@ -56,111 +56,38 @@ AI 画中文字经常出错，所以牌子、气泡里的字都留空，之后�
 
 ## 动作帧：让她像真人一样动
 
-只靠一张图做动作，要么整张图晃来晃去像纸片，要么把图局部拉伸变形，看着很诡异。所以改用动画片的做法：每个动作画几张单独的帧，程序按顺序快速切换。下面每一条出一张图。
+只靠一张图做动作，要么整张图晃来晃去像纸片，要么把图局部拉伸变形，看着很诡异。所以改用动画片的做法：多画几帧，程序按顺序切换。
 
-### 通用做法
+ChatGPT 改图时会把整张图重画一遍，动作改得越大，脸、衣服、比例就跑得越多，帧和帧之间也对不上。所以每一帧**只改一小块**：眼睛、嘴巴、举起的手，或者裙摆下面的腿。我这边只取改动的那一块，对齐后贴回原图，播放时才不会抖。
 
-1. 在 ChatGPT 里新开一个对话，上传表格里写的原图（`art/raw/hd/` 里的同名图），然后发「通用开头」加上这一帧的描述。
-2. 一次只出一张。不满意就重新生成；人物走样了，就把原图重新上传再发一次。
-3. 挑图看三点：人物没变样（脸、衣服、鲸鳍、尾巴、发饰都对）；手指和脚正常；人物大小和站的位置跟原图差不多。
-4. 存成 PNG，按表格里的文件名命名。
+### 每一帧的做法
 
-通用开头（每次都放在最前面）：
+1. 在 ChatGPT 新开一个对话（每帧都新开），只上传表格里写的那一张原图（`art/raw/hd/` 里的同名图）。
+2. 推荐用 ChatGPT 的「选择」编辑：点开图片，用画笔只涂抹表格里写的那一块，再发送提示词。没有这个功能的话，直接把图和提示词一起发送。
+3. 提示词是「通用部分」加上这一帧的「改动」，用英文，ChatGPT 对英文的限制条件执行得更严格。
+4. 挑图只看改的那一块对不对、画风一不一致。别处有一点变化没关系。
 
-```
-编辑这张图，画同一个角色的一帧动画。角色的脸、发型、鲸鱼鳍耳朵、尾巴、衣服的每一个细节、配色、画风和线条都和原图保持一致；人物的大小、在画面中的位置、脚踩的高度也和原图一样。只改下面说的部分。竖版 2:3，透明背景，人物完整入画，画面里不要有文字。
-```
-
-### 第一批：效果最明显，先做这些
-
-**眨眼（5 张）**：每个睁着眼的表情各出一张闭眼版，上传对应的原图。这一组我只取眼睛那一小块贴回原图，别处有细微变化也没关系，眼睛画对就行。
+通用部分（`{area}` 换成表格里的英文区域）：
 
 ```
-只改眼睛：两只眼睛都自然地闭上，像眨眼时眼睛刚好合上的那一瞬间——上眼睑垂下来和下眼睑合在一起，闭合处是一条带睫毛、微微向下弯的弧线。眉毛、嘴巴、脸颊红晕、头发和其他所有地方都不要变。
+Edit the attached image. This is one frame of an animation of the same character, so it must stay aligned with the original. Change ONLY {area}. Everything else must stay exactly as it is: the same canvas size and 2:3 portrait aspect ratio, the same framing, the character at the same size and in the same position, and the same pose, face, hair, whale-fin ears, tail, outfit, colours, line art and shading. Do not redraw, restyle, crop, zoom, shift or re-pose anything. Keep the transparent background; if you cannot, use a plain white background, never a checkerboard pattern. No text, no other people, no hands holding her.
 ```
 
-| 文件名 | 上传的原图 |
-| --- | --- |
-| `idle-blink.png` | idle.png |
-| `hello-blink.png` | hello.png |
-| `think-blink.png` | think.png |
-| `aha-blink.png` | aha.png |
-| `eat-blink.png` | eat.png |
+| 文件名 | 原图 | 涂抹的区域 | 英文区域 `{area}` | 改动（接在通用部分后面，前面加 `The change: `） |
+| --- | --- | --- | --- | --- |
+| `idle-blink.png` | idle | 两只眼睛 | both eyes | Close both eyes, as at the instant of a blink: the upper eyelids come all the way down to meet the lower eyelids, so each eye becomes a single soft dark lash line that curves slightly downward, in the same colour and line style as her lashes. Keep the eyebrows, the skin tone and the blush under the eyes. |
+| `idle-half.png` | idle | 两只眼睛 | both eyes | Half-close both eyes, as halfway through a blink: the upper eyelids come down to cover the upper half of each iris, and the lower half of each blue iris is still visible. Same lashes, same eye shape at the corners. |
+| `hello-blink.png`、`think-blink.png`、`aha-blink.png`、`eat-blink.png` | hello、think、aha、eat | 两只眼睛 | both eyes | 同 `idle-blink` |
+| `idle-look.png` | idle | 两只眼睛 | both eyes | Move only her irises and pupils so that she glances toward the right side of the image. The eyelids, lashes, eye shape and highlights stay the same. |
+| `idle-talk.png` | idle | 嘴巴 | the mouth | Open her mouth slightly, as if in the middle of saying something: a small, softly open mouth showing a little of the inside, in the same gentle smiling shape and the same lip colour. |
+| `walk-a.png` | idle | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | Bend the knee of the leg on the LEFT side of the image and lift that foot about one shoe-height off the ground, toes pointing slightly down, as in a walking step. The leg on the RIGHT side of the image stays straight with its foot flat on the ground. Same socks and same shoes. |
+| `walk-b.png` | idle | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | 同 `walk-a`，把 LEFT 和 RIGHT 对调 |
+| `carry-a.png` | aha | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | She is being lifted off the ground, so both feet dangle in the air with the toes pointing down. Bend the knee of the leg on the LEFT side of the image and raise it a little, as if kicking; the leg on the RIGHT side of the image hangs straight down. Same socks and same shoes. |
+| `carry-b.png` | aha | 裙摆下面的腿和鞋 | the legs and feet below the hem of the skirt | 同 `carry-a`，把 LEFT 和 RIGHT 对调 |
+| `hello-wave.png`、`happy-wave.png` | hello、happy | 举起的那只手 | the raised hand | Tilt the raised open hand at the wrist about 25 degrees toward her face, fingers still spread, as the other end of a waving motion. Same hand size, same skin colour, the sleeve cuff unchanged. |
+| `eat-chew.png` | eat | 嘴巴和两颊 | the mouth and cheeks | Close her mouth and puff out her cheeks as if chewing a mouthful. The coin, her hands and her eyes stay exactly the same. |
 
-可选，眨眼更顺滑：`idle-blink-half.png`，上传 idle.png：
-
-```
-只改眼睛：两只眼睛半闭，上眼睑垂下来盖住瞳孔的上半部分，像眨眼眨到一半。其他所有地方都不要变。
-```
-
-**走路（4 张）**：上传 idle.png。她朝画面左边走（往右走时程序会镜像翻转），4 张连起来是一个完整的步子循环。四张在同一个对话里按顺序连着出，后一张才知道「上一帧」是什么。
-
-`walk-1.png`：
-
-```
-把她改成正在朝画面左边走路的样子：身体转成 3/4 侧身面向画面左边，表情是轻松的微笑。这一帧是迈步：离观众近的那条腿向前（画面左边）迈出、脚跟着地，另一条腿在后面、脚尖点地，两腿前后分开；两只手臂自然地前后摆动，和腿的方向相反；头发和裙摆随着走路轻轻摆动。
-```
-
-`walk-2.png`：
-
-```
-同一个走路动作的下一帧：两条腿交错靠拢，后面那只脚抬起、膝盖弯曲，正从后往前收；身体比迈步时略高一点；手臂摆回身体两侧。其他和上一帧一致。
-```
-
-`walk-3.png`：
-
-```
-走路的下一帧：和第一帧左右腿互换——离观众远的那条腿向前迈出、脚跟着地，近的那条腿在后面、脚尖点地；手臂摆动的方向也和第一帧相反。其他和上一帧一致。
-```
-
-`walk-4.png`：
-
-```
-走路的下一帧：和第二帧一样两腿交错靠拢，但这次抬起来往前收的是另一只脚（离观众近的那只）。其他和上一帧一致。
-```
-
-如果一张张出的四帧对不上，可以试试一次出一整张：「画这个角色朝画面左边走路的 4 帧动画，一行排 4 个，每帧人物大小和脚的高度一致，透明背景」，存成 `walk-sheet.png`。
-
-**转身（1 张）**：`turn.png`，上传 idle.png。转身时在朝左和朝右之间闪过这一帧，看起来就像真的转过身来。
-
-```
-改成身体和脸都正对观众站立，左右基本对称，双手自然垂在身体两侧，温柔的微笑。
-```
-
-**被拎起来（2 张）**：上传 aha.png，两张在同一个对话里连着出。
-
-`carry-1.png`：
-
-```
-改成被人从头顶上方拎起来、悬在半空中的样子：双脚离地，脚尖朝下，两条腿在空中乱蹬——离观众近的那条腿往上抬、膝盖弯曲，另一条腿往下伸直；双手微微张开、慌张地挥动；裙摆、头发和尾巴因为悬空自然地往下垂；表情保持惊讶。
-```
-
-`carry-2.png`：
-
-```
-同一个动作的下一帧：两条腿换过来——离观众远的那条腿抬起、膝盖弯曲，近的那条往下伸直；手臂换一个挥动的位置。其他和上一帧一致。
-```
-
-### 第二批：更多动作
-
-| 文件名 | 上传的原图 | 描述（放在通用开头后面） |
-| --- | --- | --- |
-| `look.png` | idle.png | 头和眼睛转向画面右边，像在看旁边有什么东西，表情好奇。 |
-| `tilt.png` | idle.png | 头微微歪向一边，可爱地歪着头看着观众。 |
-| `wave-2.png` | hello.png | 只改举起的那只手：手掌摆到另一边，像挥手动作的另一头；表情和其他地方都不变。 |
-| `jump-1.png` | happy.png | 膝盖弯曲、身体下蹲准备起跳，双臂往后摆。 |
-| `jump-2.png` | happy.png | 跳到空中：双脚离地往后收起，双手高高举起，头发和裙摆向上飘起来。 |
-| `stretch.png` | idle.png | 伸懒腰：双手十指交叉举过头顶往上伸，踮起脚尖，闭着眼睛张嘴打哈欠。 |
-| `dance-1.png` | happy.png | 开心地跳舞：一只手举高、另一只手叉腰，身体向画面左边倾斜，离观众远的那只脚抬起。 |
-| `dance-2.png` | happy.png | 跳舞的另一个姿势：和上一个反过来，身体向画面右边倾斜，换另一只手举高、另一只脚抬起。 |
-| `munch-2.png` | eat.png | 只改嘴巴和脸颊：嘴巴闭上，鼓着腮帮正在嚼，硬币上的缺口再大一点；其他不变。 |
-| `tap.png` | idle.png | 弯下腰往前（画面左边）探身，伸出一只手的食指往下点，像在按地上的一个按钮。 |
-
-可选：小跑 4 张（`run-1.png` 到 `run-4.png`），描述照走路的写，再加上「步子更大，身体往前倾，有一瞬间双脚都离地」。
-
-### 出好图以后
-
-把图按上面的文件名传到 GitHub 上 `claude/deepseek-fat-fish-pet-07ov0e` 分支的 `art/raw/` 文件夹（网页上 Add file → Upload files），或者直接在对话里发给我。我来对齐尺寸和位置（眨眼只取眼睛那一块贴回原图，保证不会抖），再接进程序：眨眼、走路、转身这些都按帧切换，不拉伸、不变形。
+画好以后传到 GitHub 上 `claude/deepseek-fat-fish-pet-07ov0e` 分支的 `art/raw/` 文件夹，或者直接在对话里发给我。
 
 ## 其他工具
 
