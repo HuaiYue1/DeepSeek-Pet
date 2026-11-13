@@ -118,10 +118,10 @@ export const ICONS = { app: [210, 10, 480], tray: [284, 104, 330] };
 // lid]; a raised hand that waves, [x, y, radius, elbow x, elbow y]; a coin
 // she bites, [x, y, radius]. Closed or swirly eyes don't blink.
 export const RIGS = {
-  hello: { eyes: [[360, 415, 265, 305], [456, 519, 244, 284]], hand: [645, 405, 125, 605, 555] },
+  hello: { eyes: [[360, 415, 265, 305], [456, 519, 244, 284]], hand: [645, 423, 149, 605, 555, 632, 452] },
   idle: { eyes: [[352, 412, 262, 300], [455, 520, 240, 281]] },
   think: { eyes: [[355, 405, 261, 299], [452, 514, 234, 276]] },
-  happy: { hand: [670, 405, 125, 625, 560] },
+  happy: { hand: [670, 424, 149, 625, 560, 652, 458] },
   aha: { eyes: [[356, 411, 262, 300], [456, 516, 242, 284]] },
   eat: { eyes: [[360, 415, 266, 304], [456, 519, 243, 283]], bite: [455, 415, 130] },
 };

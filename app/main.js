@@ -36,7 +36,8 @@ const isLinux = process.platform === 'linux';
 let win = null;
 let tray = null;
 let settings = { size: 'medium', onTop: true, roam: true, crossScreens: true, x: null, y: null };
-let sprites = {};
+const sprites = {};
+const animations = {};
 let spriteSize = [341, 644];
 let drag = null;
 let hop = null; // hopping between screens: the timer moving her
@@ -77,6 +78,10 @@ function loadSprites() {
     sprites[key] = image.toDataURL();
     const { width, height } = image.getSize();
     spriteSize = [width, height];
+  }
+  for (const key of ['walk', 'wave', 'munch', 'jump']) {
+    const file = path.join(spriteDir, '..', 'animation', `${key}.webp`);
+    if (fs.existsSync(file)) animations[key] = `data:image/webp;base64,${fs.readFileSync(file, 'base64')}`;
   }
 }
 
@@ -262,6 +267,7 @@ ipcMain.handle('pet:init', () => ({
   roam: settings.roam,
   version: app.getVersion(),
   sprites,
+  animations,
   geometry: geometry(),
 }));
 
