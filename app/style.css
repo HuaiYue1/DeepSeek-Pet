@@ -49,7 +49,7 @@ body {
 /* With WebGL she is a puppet instead (#pet.puppet, see puppet.js and
    motion.js): the canvas takes the picture's place, with room around it
    for her hair, skirt and tail to swing out. She is mirrored as she is
-   drawn. The 2D canvas plays the drawn frames when WebGL is unavailable. */
+   drawn. The 2D canvas plays the GIF frames. */
 #puppet,
 #frames,
 #shadow { display: none; }
@@ -64,7 +64,7 @@ body {
   height: 100%;
 }
 
-#pet.puppet #puppet {
+#pet.puppet:not(.drawn-frame) #puppet {
   display: block;
   position: absolute;
   left: -7%;
@@ -75,7 +75,8 @@ body {
 }
 
 /* her shadow on the floor */
-#pet.puppet #shadow {
+#pet.puppet #shadow,
+#pet.drawn-frame #shadow {
   display: block;
   position: absolute;
   left: 32.5%;
@@ -87,7 +88,7 @@ body {
   pointer-events: none;
 }
 
-#pet.puppet.mirrored #shadow { left: 38.5%; }
+#pet.mirrored #shadow { left: 38.5%; }
 
 #sprite {
   display: block;

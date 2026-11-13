@@ -83,8 +83,8 @@ function loadSprites() {
     spriteSize = [width, height];
   }
   for (const key of ['walk', 'wave', 'munch', 'jump']) {
-    const file = path.join(spriteDir, '..', 'animation', `${key}.webp`);
-    if (fs.existsSync(file)) animations[key] = `data:image/webp;base64,${fs.readFileSync(file, 'base64')}`;
+    const file = path.join(spriteDir, '..', 'animation', `${key}.gif`);
+    if (fs.existsSync(file)) animations[key] = new Uint8Array(fs.readFileSync(file));
   }
 }
 

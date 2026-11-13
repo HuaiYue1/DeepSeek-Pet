@@ -519,7 +519,7 @@ function spritePoint(x, y) {
     const [bx, by] = boxPoint(x, y);
     const u = bx / box.width;
     const v = (by - drawnLift) / box.height;
-    if (puppet) {
+    if (!drawnKey) {
       const [px, py] = Puppet.PAD;
       return puppet.pick((u + px) / (1 + 2 * px), (v + py) / (1 + 2 * py));
     }
@@ -631,27 +631,9 @@ function drawCharacter(dt) {
   const frameImage = selected ? images[selected] : null;
   const pose = motion.pose;
   const lift = motion.body.ty;
-  if (puppet) {
-    const key = frameImage ? selected : current;
-    if (images[key]) {
-      puppet.show(key, images[key], rigs[key]);
-      // The drawing supplies the primary action. Hair and tail still respond
-      // to movement, while feet, hands and head keep their drawn pose.
-      puppet.draw(frameImage ? {
-        ...Puppet.REST,
-        mirror: pose.mirror,
-        breath: pose.breath * 0.35,
-        hair: pose.hair.map((offset) => offset * 0.4),
-        skirt: pose.skirt.map((offset) => offset * 0.25),
-        tail: pose.tail * 0.35,
-      } : pose);
-    }
-    canvas.style.transform = lift ? `translateY(${lift}px)` : '';
-    shadow.style.opacity = motion.shadow;
-    shadow.style.transform = motion.shadowScale !== 1 ? `scale(${motion.shadowScale})` : '';
-  } else {
-    petEl.classList.toggle('drawn-frame', !!frameImage);
-    if (frameImage && (selected !== drawnKey || pose.mirror !== drawnMirror)) {
+  petEl.classList.toggle('drawn-frame', !!frameImage);
+  if (frameImage) {
+    if (selected !== drawnKey || pose.mirror !== drawnMirror) {
       const { width, height } = frameImage;
       if (frameCanvas.width !== width || frameCanvas.height !== height) {
         frameCanvas.width = width;
@@ -663,7 +645,13 @@ function drawCharacter(dt) {
       frameContext.drawImage(frameImage, 0, 0);
     }
     frameCanvas.style.transform = lift ? `translateY(${lift}px)` : '';
+  } else if (puppet && images[current]) {
+    puppet.show(current, images[current], rigs[current]);
+    puppet.draw(pose);
+    canvas.style.transform = lift ? `translateY(${lift}px)` : '';
   }
+  shadow.style.opacity = motion.shadow;
+  shadow.style.transform = motion.shadowScale !== 1 ? `scale(${motion.shadowScale})` : '';
   drawnKey = frameImage ? selected : null;
   renderedKey = drawnKey || (puppet ? current : null);
   drawnMirror = pose.mirror;
@@ -681,7 +669,7 @@ function frame(now) {
     drawPose();
   }
   drawCharacter(dt);
-  if (puppet || moving || drawnKey || (motion.jumpPhase != null && images['jump-0'])) requestAnimationFrame(frame);
+  if (puppet || moving || drawnKey) requestAnimationFrame(frame);
   else framing = false;
 }
 
@@ -836,15 +824,14 @@ async function start() {
   applyGeometry(init.geometry);
   await Promise.all([
     ...Object.entries(sprites).map(([key, url]) => buildHitMap(key, url)),
-    ...Object.entries(init.animations || {}).map(([key, url]) => Frames.load(key, url, registerImage)),
+    ...Object.entries(init.animations || {}).map(([key, bytes]) => Frames.load(key, bytes, registerImage)),
   ]);
   puppet = Puppet.create(canvas);
   if (puppet) {
     petEl.classList.add('puppet');
-    // Continue the sequence on the 2D canvas if the WebGL context is lost.
+    // GIF actions use the 2D canvas independently of WebGL.
     canvas.addEventListener('webglcontextlost', () => {
       puppet = null;
-      drawnKey = null; // redraw the current frame on the 2D canvas
       petEl.classList.remove('puppet');
     });
   }
