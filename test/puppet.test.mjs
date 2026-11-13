@@ -54,7 +54,7 @@ test('a wave moves the raised hand and leaves the rest of her be', () => {
 
 test('walking lifts one foot while the other stays down', () => {
   const rest = bent(Puppet.REST);
-  const step = bent(pose({ step: [Math.PI / 2, 14, 30, 0] })); // lifting the foot on the left of the picture
+  const step = bent(pose({ feet: [[14, 30, 0], [0, 0, 0]] }));
   assert.ok(moved(step, rest, near(rest, 370, 1270)) > 25, 'left foot up');
   assert.ok(moved(step, rest, near(rest, 490, 1300)) < 1, 'right foot down');
 });
@@ -62,7 +62,7 @@ test('walking lifts one foot while the other stays down', () => {
 test('the mouse finds the same bit of her however she is bent', () => {
   const poses = [
     pose({ hair: [30, 5], skirt: [15, -4], head: 0.1, bend: -0.06, tail: 0.12, ahoge: 0.3, breath: 1 }),
-    pose({ mirror: true, step: [2.1, 20, 44, 16], hair: [-25, 3], tail: -0.1 }),
+    pose({ mirror: true, feet: [[20, 44, 0.1], [-18, 0, 0]], hips: [0, -16], hair: [-25, 3], tail: -0.1 }),
     pose({ wave: -0.13, head: -0.05 }),
   ];
   for (const p of poses) {
@@ -77,4 +77,12 @@ test('the mouse finds the same bit of her however she is bent', () => {
   }
   // and nothing off the edge of her picture
   assert.equal(Puppet.pick(bent(Puppet.REST), 0.01, 0.01), null);
+});
+
+test('a crouch lowers the hips and keeps both shoes planted', () => {
+  const rest = bent(Puppet.REST);
+  const crouch = bent(pose({ hips: [0, 56] }));
+  assert.ok(moved(crouch, rest, near(rest, 465, 900)) > 45, 'hips lower');
+  assert.ok(moved(crouch, rest, near(rest, 371, 1270)) < 1, 'left foot stays down');
+  assert.ok(moved(crouch, rest, near(rest, 490, 1300)) < 1, 'right foot stays down');
 });

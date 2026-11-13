@@ -25,8 +25,7 @@ function seeded(seed) {
   return () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 }
 
-// standing on her feet, not hopping, squashed or shaken
-const planted = (body) => body.tx === 0 && body.ty === 0 && body.sx === 1 && body.sy === 1;
+const planted = (body) => body.ty === 0;
 
 const walkingLeft = (from, to, speed = 66) => (t) => {
   const on = t >= from && t < to;
@@ -39,7 +38,8 @@ test('standing still, she only stirs a little', () => {
   for (const { t, pose, body } of frames.filter((f) => f.t > 1)) {
     assert.ok(Math.abs(pose.hair[0]) < 6 && Math.abs(pose.skirt[0]) < 2, `hair ${pose.hair} skirt ${pose.skirt} at ${t}`);
     assert.ok(Math.abs(pose.bend) < 0.03 && Math.abs(pose.head) < 0.07 && Math.abs(pose.tail) < 0.05);
-    assert.deepEqual([...pose.step.slice(1)], [0, 0, 0]);
+    assert.ok(pose.feet.flat().every((value) => value === 0));
+    assert.ok(pose.hips.every((value) => value === 0));
     assert.ok(planted(body), JSON.stringify(body));
   }
   // but she does breathe
@@ -52,15 +52,15 @@ test('walking, her feet take turns and her hair trails behind', () => {
   const walking = frames.filter((f) => f.t > 1.2 && f.t < 2.5);
   // walking left, her hair streams out to the right
   assert.ok(walking.every((f) => f.pose.hair[0] > 3), 'hair trails');
-  // the feet lift in turn: sin(phase) > 0 lifts the one on the left of the picture, < 0 the other
-  const lifts = walking.map((f) => Math.sign(Math.sin(f.pose.step[0])));
-  const changes = lifts.filter((s, i) => i && s !== lifts[i - 1]).length;
+  const lifted = walking.map(({ pose }) => pose.feet[0][1] > pose.feet[1][1] ? 0 : 1);
+  const changes = lifted.filter((foot, i) => i && foot !== lifted[i - 1]).length;
   assert.ok(changes >= 3, `feet alternated ${changes} times`);
-  assert.ok(walking.every((f) => f.pose.step[2] > 25), 'feet lift while walking');
+  for (const i of [0, 1]) {
+    assert.ok(Math.max(...walking.map(({ pose }) => pose.feet[i][1])) > 40, 'each foot lifts');
+  }
   assert.ok(walking.every((f) => f.pose.bend < -0.01), 'she leans forward');
-  // stopped, the stride dies down and her feet come down again
-  const last = frames[frames.length - 1].pose;
-  assert.ok(last.step[1] < 1 && last.step[2] < 1 && last.step[3] < 0.5, `still stepping: ${last.step}`);
+  const last = frames.at(-1).pose;
+  assert.ok(last.feet.flat().every((value) => Math.abs(value) < 1), 'the stride settles');
 });
 
 test('carried and tilted, her hair hangs down and her legs kick; her shadow goes', () => {
@@ -68,7 +68,7 @@ test('carried and tilted, her hair hangs down and her legs kick; her shadow goes
   const held = frames[frames.length - 1];
   // tilted clockwise, down is to her right: that is where her hair hangs
   assert.ok(held.pose.hair[0] > 5, `hair ${held.pose.hair}`);
-  assert.ok(held.pose.step[1] > 0 && held.pose.step[2] > 0, 'legs kick');
+  assert.ok(held.pose.feet.every((foot) => foot[1] > 0) && held.pose.feet[0][0] !== held.pose.feet[1][0], 'legs kick');
   assert.ok(held.shadow < 0.01, 'no shadow in the air');
   assert.ok(planted(held.body), JSON.stringify(held.body));
 });
@@ -81,7 +81,8 @@ test('turning round, she hops and her hair swings out behind her', () => {
   // facing right now: behind her is to the left on screen, which as drawn (mirrored) is +x
   const swung = frames.filter((f) => f.t > 0.5 && f.t < 0.9).map((f) => f.pose.hair[0]);
   assert.ok(Math.max(...swung) > 8, `hair ${Math.max(...swung)}`);
-  assert.equal(frames[frames.length - 1].pose.mirror, true);
+  const flip = frames.find(({ pose }) => pose.mirror);
+  assert.ok(flip.t > 0.6 && flip.body.ty < -2, 'turns while airborne');
 });
 
 test('she blinks every few seconds, shutting her eyes all the way', () => {
@@ -112,4 +113,24 @@ test('showing the same sprite again starts it over', () => {
   const { frames } = run(2.5, hopping);
   const up = (from, to) => Math.min(...frames.filter((f) => f.t >= from && f.t < to).map((f) => f.body.ty));
   assert.ok(up(0, 1) < -5 && up(1.2, 1.5) === 0 && up(1.5, 2.5) < -5, 'hops, rests, hops again');
+});
+
+test('the gait advances with horizontal travel and stops during a pause', () => {
+  const { m } = run(1, () => ({ act: 'walk' }));
+  assert.equal(m.gait, 0.25);
+  const start = m.gait;
+  run(1, walkingLeft(0, 1), m);
+  assert.notEqual(m.gait, start);
+  const phase = m.gait;
+  const x = m.lastX;
+  run(1, () => ({ act: 'walk', at: [x, 650] }), m);
+  assert.equal(m.gait, phase);
+});
+
+test('jump and release lower the hips while the feet are on the floor', () => {
+  const jump = run(0.6, (t) => ({ act: t < 0.45 ? 'jump' : '' })).frames;
+  assert.ok(jump.some(({ pose, body }) => planted(body) && pose.hips[1] > 35));
+  assert.ok(jump.some(({ pose, body }) => body.ty < -20 && pose.feet[0][1] > 25));
+  const land = run(0.75, (t) => ({ held: t < 0.30 })).frames;
+  assert.ok(land.some(({ t, pose, body }) => t > 0.30 && planted(body) && pose.hips[1] > 40));
 });

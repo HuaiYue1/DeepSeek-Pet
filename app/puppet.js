@@ -22,10 +22,11 @@ const Puppet = (() => {
   const NECK = [465, 398];
   const HIPS = [465, 900];
   const TAIL_ROOT = [600, 1050]; // where her tail comes out from under the skirt
+  const ANKLES = [[366, 1165], [486, 1195]];
   const AHOGE_ROOT = [398, 58]; // of the strand of hair on her head
   const NO_RIG = {};
   // standing still, as drawn
-  const REST = { mirror: false, breath: 0, hair: [0, 0], skirt: [0, 0], ahoge: 0, head: 0, bend: 0, tail: 0, step: [0, 0, 0, 0], wave: 0, bite: 0, blink: 0 };
+  const REST = { mirror: false, breath: 0, hair: [0, 0], skirt: [0, 0], ahoge: 0, head: 0, bend: 0, tail: 0, feet: [[0, 0, 0], [0, 0, 0]], hips: [0, 0], reach: 0, wave: 0, wrist: 0, bite: 0, blink: 0 };
 
   const ramp = (v, a, b) => {
     const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
@@ -42,7 +43,7 @@ const Puppet = (() => {
     const n = (cols + 1) * (rows + 1);
     const uv = new Float32Array(2 * n);
     const w = {};
-    for (const k of ['tail', 'legs', 'right', 'feet', 'head', 'upper', 'hair', 'skirt', 'ahoge', 'chest', 'shoulders']) w[k] = new Float32Array(n);
+    for (const k of ['tail', 'legs', 'right', 'feet', 'head', 'upper', 'hair', 'skirt', 'ahoge', 'chest', 'shoulders', 'knees']) w[k] = new Float32Array(n);
     for (let j = 0, v = 0; j <= rows; j++) {
       for (let i = 0; i <= cols; i++, v++) {
         uv[2 * v] = i / cols;
@@ -56,7 +57,8 @@ const Puppet = (() => {
         w.tail[v] = tail;
         w.legs[v] = legs;
         w.right[v] = ramp(x, 418, 440); // the leg on the right of the picture
-        w.feet[v] = ramp(y, 1060, 1185); // the feet, and the shins bending to them
+        w.feet[v] = ramp(y, 991, 1160);
+        w.knees[v] = ramp(y, 965, 1055) * (1 - ramp(y, 1055, 1160)) * (1 - tail);
         w.head[v] = 1 - ramp(y, 335, 425);
         w.upper[v] = (1 - ramp(y, 600, 960)) * (1 - tail); // above the hips
         w.hair[v] = sides * ramp(y, 280, 620) * (1 - ramp(y, 680, 780)) * (1 - tail);
@@ -80,7 +82,7 @@ const Puppet = (() => {
   }
 
   // The sprite's parts that move on their own (see RIGS in art/states.mjs):
-  // a raised hand [x, y, radius, elbow x, elbow y], or a coin [x, y, radius].
+  // a raised hand [x, y, radius, elbow x/y, wrist x/y], or a coin [x, y, radius].
   function setRig(mesh, rig = NO_RIG) {
     if (rig === mesh.rig) return;
     mesh.rig = rig;
@@ -105,22 +107,30 @@ const Puppet = (() => {
   // Bend the mesh into `pose` (see motion.js).
   function bend(mesh, pose) {
     const { w, part, rig, uv, at } = mesh;
-    const [phase, sweep, lift, bob] = pose.step;
-    const c = Math.cos(phase);
-    const s = Math.sin(phase);
-    const [, , , elbowX, elbowY] = rig.hand || [];
+    const [left, right] = pose.feet;
+    const [hipX, hipY] = pose.hips;
+    const [, , , elbowX, elbowY, wristX, wristY] = rig.hand || [];
     for (let v = 0; v < mesh.n; v++) {
       pt[0] = uv[2 * v] * TEX[0];
       pt[1] = uv[2 * v + 1] * TEX[1];
-      // walking: her feet take turns to lift and swing forward (to the left,
-      // as drawn), then push back along the floor
-      const l = w.legs[v] * w.feet[v] * (1 - w.right[v]);
-      const r = w.legs[v] * w.feet[v] * w.right[v];
-      pt[0] += (l - r) * sweep * c;
-      pt[1] -= (l * Math.max(0, s) + r * Math.max(0, -s)) * lift;
-      // a hand waving about the elbow, or a coin being bitten
+      // Pivot each shoe at the ankle, tapering the displacement up its shin.
+      const r = w.right[v];
+      const l = 1 - r;
+      const feet = w.legs[v] * w.feet[v];
+      if (feet > 0) {
+        const ankle = r > 0.5 ? ANKLES[1] : ANKLES[0];
+        turn(ankle[0], ankle[1], (left[2] * l + right[2] * r) * feet);
+        pt[0] += (left[0] * l + right[0] * r) * feet;
+        pt[1] -= (left[1] * l + right[1] * r) * feet;
+      }
+      // Shift the hips over the support leg and fold the knees under load.
+      pt[0] += hipX * (1 - w.legs[v]) - 0.62 * Math.max(0, hipY) * w.knees[v];
+      pt[1] += hipY * (1 - w.legs[v]) - 24 * pose.reach * w.shoulders[v];
       const p = part[v];
-      if (p && rig.hand) turn(elbowX, elbowY, pose.wave * p);
+      if (p && rig.hand) {
+        turn(wristX, wristY, pose.wrist * p * (1 - ramp(pt[1], wristY, elbowY)));
+        turn(elbowX, elbowY, pose.wave * p);
+      }
       if (p && rig.bite) pt[1] -= pose.bite * p;
       // breathing: the chest swells, the shoulders and head rise and fall
       const swell = 1 + 0.012 * pose.breath * w.chest[v];
@@ -134,8 +144,6 @@ const Puppet = (() => {
       pt[1] += pose.hair[1] * hair + pose.skirt[1] * w.skirt[v];
       turn(HIPS[0], HIPS[1], pose.bend * w.upper[v]);
       turn(TAIL_ROOT[0], TAIL_ROOT[1], pose.tail * w.tail[v]);
-      // rising over the standing leg
-      pt[1] -= bob * (1 - w.legs[v]);
       const x = pose.mirror ? TEX[0] - pt[0] : pt[0];
       at[2 * v] = (x / TEX[0] + PAD[0]) / (1 + 2 * PAD[0]);
       at[2 * v + 1] = (pt[1] / TEX[1] + PAD[1]) / (1 + 2 * PAD[1]);
@@ -271,11 +279,13 @@ void main() {
     let rig = NO_RIG;
 
     function upload(image) {
-      const h = Math.min(image.naturalHeight, textureHeight);
+      const imageHeight = image.naturalHeight || image.height;
+      const imageWidth = image.naturalWidth || image.width;
+      const h = Math.min(imageHeight, textureHeight);
       let source = image;
-      if (h < image.naturalHeight) {
+      if (h < imageHeight) {
         source = document.createElement('canvas');
-        source.width = Math.round((image.naturalWidth * h) / image.naturalHeight);
+        source.width = Math.round((imageWidth * h) / imageHeight);
         source.height = h;
         const ctx = source.getContext('2d');
         ctx.imageSmoothingQuality = 'high';
@@ -302,6 +312,7 @@ void main() {
     function show(key, image, spriteRig) {
       if (!textureHeight) textureHeight = drawnHeight();
       if (!textures.has(key)) textures.set(key, upload(image));
+      if (shown?.[0] === key) return;
       gl.bindTexture(gl.TEXTURE_2D, textures.get(key));
       shown = [key, image];
       rig = spriteRig || NO_RIG;
@@ -320,7 +331,11 @@ void main() {
         textureHeight = needed;
         for (const texture of textures.values()) gl.deleteTexture(texture);
         textures.clear();
-        if (shown) show(shown[0], shown[1], rig);
+        if (shown) {
+          const [key, image] = shown;
+          shown = null;
+          show(key, image, rig);
+        }
       }
       gl.viewport(0, 0, w, h);
       gl.clearColor(0, 0, 0, 0);
