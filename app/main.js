@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STATES, MORE_LINES, EVENT_LINES, RIGS } from '../art/states.mjs';
-import { isNewer, latestRelease } from './update.js';
+import { canInstallUpdate, installWindowsUpdate, isNewer, latestRelease } from './update.js';
 import { surroundings, walkStep } from './walkway.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -42,7 +42,10 @@ let spriteSize = [341, 644];
 let drag = null;
 let hop = null; // hopping between screens: the timer moving her
 let saveTimer = null;
-let update = null; // a newer release, once found: { version, url }
+let update = null;
+let releaseCheck = null;
+let manualUpdate = '';
+let updater = null;
 
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 
@@ -219,8 +222,8 @@ function contextMenu() {
     });
   }
   template.push({ type: 'separator' });
-  if (update) template.push({ label: `下载新版本 v${update.version}`, click: () => shell.openExternal(update.url) });
-  template.push({ label: '检查更新', click: () => checkForUpdate(true) });
+  if (update) template.push({ label: `打开 v${update.version} 下载页`, click: () => shell.openExternal(update.url) });
+  template.push({ label: manualUpdate || '检查更新', enabled: !manualUpdate, click: () => checkForUpdate(true) });
   template.push({ type: 'separator' }, { label: '隐藏', click: () => win.hide() }, { label: '退出', click: () => app.quit() });
   return Menu.buildFromTemplate(template);
 }
@@ -240,20 +243,73 @@ function createTray() {
 
 // ---------------------------------------------------------------- updates
 
-// Look for a newer release now and then and have her mention it; the menu
-// then offers its download page. `asked`: from the menu, so also say when
-// there is nothing new or the check failed.
-async function checkForUpdate(asked = false) {
-  try {
-    const latest = await latestRelease(net.fetch);
-    if (isNewer(latest.version, app.getVersion())) {
-      update = latest;
-      send({ type: 'update', version: latest.version });
-    } else if (asked) {
-      send({ type: 'update', upToDate: true, version: app.getVersion() });
+async function getUpdater() {
+  if (updater) return updater;
+  const { default: { autoUpdater } } = await import('electron-updater');
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on('download-progress', ({ percent }) => {
+    manualUpdate = `正在下载更新… ${Math.round(percent)}%`;
+  });
+  autoUpdater.on('error', (error) => {
+    console.warn('Update failed:', error);
+    if (manualUpdate === '正在安装并重启…') {
+      manualUpdate = '';
+      send({ type: 'update', failed: true });
     }
-  } catch {
-    if (asked) send({ type: 'update', failed: true });
+  });
+  updater = autoUpdater;
+  return updater;
+}
+
+async function checkForUpdate(asked = false) {
+  if (manualUpdate) return;
+  if (asked) {
+    manualUpdate = '正在检查更新…';
+    send({ type: 'update', status: manualUpdate });
+  }
+
+  try {
+    releaseCheck ??= latestRelease(net.fetch).finally(() => { releaseCheck = null; });
+    const latest = await releaseCheck;
+    const version = app.getVersion();
+    const previous = update?.version;
+    update = isNewer(latest.version, version) ? latest : null;
+    if (!asked) {
+      if (!manualUpdate && update && previous !== update.version) send({ type: 'update', version: update.version });
+      return;
+    }
+    if (!update) {
+      send({ type: 'update', upToDate: true, version });
+      return;
+    }
+
+    const canInstall = canInstallUpdate({
+      platform: process.platform,
+      packaged: app.isPackaged,
+      portable: !!process.env.PORTABLE_EXECUTABLE_FILE,
+      hasConfig: fs.existsSync(path.join(process.resourcesPath || here, 'app-update.yml')),
+    });
+    if (canInstall && latest.installer) {
+      const installing = await installWindowsUpdate(await getUpdater(), latest, () => {
+        manualUpdate = '正在下载更新…';
+        send({ type: 'update', status: `正在下载 v${latest.version}…` });
+      }, () => {
+        if (!finishDrag()) saveSettings();
+        manualUpdate = '正在安装并重启…';
+        send({ type: 'update', status: manualUpdate });
+      });
+      if (installing) return;
+    }
+    await shell.openExternal(latest.url);
+    send({ type: 'update', version: latest.version, status: `已打开 v${latest.version} 的下载页。` });
+  } catch (error) {
+    if (asked) {
+      console.warn('Update check failed:', error);
+      send({ type: 'update', failed: true });
+    }
+  } finally {
+    if (asked && manualUpdate !== '正在安装并重启…') manualUpdate = '';
   }
 }
 
@@ -400,8 +456,8 @@ if (!app.requestSingleInstanceLock()) {
     loadSprites();
     createWindow();
     createTray();
-    setTimeout(checkForUpdate, 20000);
-    setInterval(checkForUpdate, 12 * 3600 * 1000);
+    setTimeout(() => checkForUpdate(), 20000);
+    setInterval(() => checkForUpdate(), 12 * 3600 * 1000);
   });
   app.on('window-all-closed', () => app.quit());
 }

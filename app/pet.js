@@ -806,7 +806,8 @@ window.pet.onCommand((cmd) => {
     if (dragging) return;
     stopWalking();
     const line = (kind) => eventLine(kind).replace('{version}', cmd.version);
-    if (cmd.failed) show('busy', { line: line('updateFailed'), ms: 4200 });
+    if (cmd.status) say(cmd.status, { ms: 6000 });
+    else if (cmd.failed) show('busy', { line: line('updateFailed'), ms: 4200 });
     else if (cmd.upToDate) show('happy', { line: line('upToDate'), ms: 3600 });
     else {
       show('aha', { line: line('update'), ms: 6000 });
