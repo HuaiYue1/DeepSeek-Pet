@@ -83,7 +83,7 @@ npm run art
 
 | 文件 | 动作 |
 | --- | --- |
-| `walk.gif` | 走路和小跑 |
+| `walk.gif` | 双手提裙摆走路和小跑 |
 | `jump.gif` | 跨屏时的跳跃姿态 |
 | `jump-in-place.gif` | 原地屈膝、蹬地、腾空、缓冲落地 |
 | `wave.gif` | 打招呼 |

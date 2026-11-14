@@ -24,13 +24,13 @@ const Motion = (() => {
   const FOLLOW = 30; // 1/s: how closely the smoothed window follows the real one
   const MAX_ACCEL = 4000; // screen px/s²: more than this is her window jumping
   const STEP = 1 / 120;
-  // Speed is in pet heights/s. Both gaits use the same drawn stride. The
-  // support shoe travels about 100 px in half a stride on the 500 px canvas.
+  // Speed is in pet heights/s. Both gaits use the same drawn stride.
+  // One cycle moves 96 pixels on the skirt-walk drawing's 500 px canvas.
   const GAIT = {
-    walk: { speed: 0.31, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
-    run: { speed: 0.48, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
+    walk: { speed: 0.15, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
+    run: { speed: 0.25, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
   };
-  const STRIDE = 0.40;
+  const STRIDE = 96 / 500;
   const GATHERED = [[0.25, 0.32], [0.75, 0.82]]; // feet pass underneath the hips
   const JUMP_TIME = 1.10;
   const HOP_TIME = 0.45;

@@ -129,7 +129,7 @@ test('the gait advances with horizontal travel and stops during a pause', () => 
 
 test('walking eases into the stride, brakes for the distance and settles its last step', () => {
   const dt = 1 / 60;
-  const top = 93;
+  const top = 45;
   const first = Motion.walkSpeed('walk', 0, 300, 300, dt);
   assert.ok(first > 0 && first < top / 10);
   assert.equal(Motion.walkSpeed('walk', top, 100, 300, dt), top);
@@ -138,7 +138,7 @@ test('walking eases into the stride, brakes for the distance and settles its las
 
   const { m } = run(0.1, () => ({ act: 'walk', at: [1450, 500], walkTravel: 0 }));
   assert.equal(m.gait, 0.25);
-  run(dt, () => ({ act: 'walk', walkTravel: 30 }), m);
+  run(dt, () => ({ act: 'walk', walkTravel: 15 }), m);
   const before = m.gait;
   run(0.16, () => ({ act: 'walk-stop', walkTravel: 0 }), m);
   assert.ok(m.gait > before && m.gait >= 0.75 - 1e-12);
