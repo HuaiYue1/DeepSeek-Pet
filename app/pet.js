@@ -252,13 +252,15 @@ function walk({ dir = Math.random() < 0.5 ? -1 : 1, distance, run = false, line 
   const act = run ? 'run' : 'walk';
   walking = {
     dir,
-    speed: Motion.speed(act) * h,
-    left: distance ?? h * rand(0.6, 1.8),
+    speed: 0,
+    left: Math.max(0, Math.round(distance ?? h * rand(0.6, 1.8))),
     act,
     then,
     acc: 0,
+    travel: 0,
     pending: false,
     pause: 0,
+    turning: false,
     stuck: 0,
   };
   petEl.dataset.act = walking.act;
@@ -269,7 +271,7 @@ function walk({ dir = Math.random() < 0.5 ? -1 : 1, distance, run = false, line 
 function stopWalking() {
   if (!walking) return;
   walking = null;
-  if (['walk', 'run', 'jump'].includes(petEl.dataset.act)) petEl.dataset.act = '';
+  if (['walk', 'run', 'walk-stop', 'hop'].includes(petEl.dataset.act)) petEl.dataset.act = '';
 }
 
 function arrived(w) {
@@ -283,42 +285,62 @@ function stepWalk(dt) {
     w.pause -= dt;
     if (w.pause <= 0) {
       if (w.left <= 0) arrived(w);
-      else petEl.dataset.act = w.act; // landed from a hop: walk on
+      else if (w.turning) {
+        w.turning = false;
+        w.dir = -w.dir;
+        petEl.dataset.act = '';
+        turn(w.dir);
+        w.pause = 0.26;
+        if (Math.random() < 0.6) say(eventLine('turn'), { ms: 2200 });
+      } else {
+        petEl.dataset.act = w.act;
+      }
     }
     return;
   }
-  w.acc += w.dir * w.speed * dt;
-  const dx = Math.trunc(w.acc);
-  if (w.pending || !dx) return;
-  w.acc -= dx;
+  if (w.pending) return;
+  if (w.left <= 0) {
+    petEl.dataset.act = 'walk-stop';
+    w.pause = 0.16;
+    return;
+  }
+  const speed = Motion.walkSpeed(w.act, w.speed, w.left - w.acc, petH, dt);
+  w.acc = Math.min(w.left, w.acc + (w.speed + speed) * dt / 2);
+  w.speed = speed;
+  const step = Math.floor(w.acc);
+  if (!step) return;
+  w.acc -= step;
   w.pending = true;
-  window.pet.walk(dx).then(({ moved, busy, hop }) => {
+  window.pet.walk(w.dir * step).then(({ moved, busy, hop }) => {
     w.pending = false;
-    if (walking !== w || busy) return;
-    w.left -= Math.abs(moved);
+    if (walking !== w) return;
+    if (busy) {
+      w.speed = w.acc = 0;
+      return;
+    }
+    const distance = Math.abs(moved);
+    w.left = Math.max(0, w.left - distance);
     if (hop) {
       // on to the next screen, jumping up or down onto its floor
+      w.speed = w.acc = 0;
       w.pause = hop / 1000;
-      petEl.dataset.act = 'jump';
+      petEl.dataset.act = 'hop';
       if (Math.random() < 0.7) say(eventLine('arrive'), { ms: 2600 });
       return;
     }
     if (moved) {
       w.stuck = 0;
+      w.travel += distance;
     } else if (++w.stuck > 2) {
       stopWalking(); // no room either way
-      return;
     } else {
-      // at the edge of the screen: turn round
-      w.dir = -w.dir;
-      w.acc = 0;
-      w.pause = 0.5;
-      petEl.dataset.act = '';
-      turn(w.dir);
-      if (Math.random() < 0.6) say(eventLine('turn'), { ms: 2200 });
+      // Gather her feet at the edge before she turns around.
+      w.speed = w.acc = 0;
+      w.turning = true;
+      w.pause = 0.16;
+      petEl.dataset.act = 'walk-stop';
     }
-    if (w.left <= 0) arrived(w);
-  }, stopWalking);
+  }, () => { if (walking === w) stopWalking(); });
 }
 
 // An activity's animation for `ms` (see data-act in style.css).
@@ -360,8 +382,6 @@ function tapTaskbar(where = {}) {
 
 function jump() {
   show('happy', { line: eventLine('jump'), ms: 2400 });
-  playAct('jump', 450);
-  later('next', 650, () => playAct('jump', 450));
 }
 
 function dance() {
@@ -519,7 +539,7 @@ function spritePoint(x, y) {
     const [bx, by] = boxPoint(x, y);
     const u = bx / box.width;
     const v = (by - drawnLift) / box.height;
-    if (puppet) {
+    if (!drawnKey) {
       const [px, py] = Puppet.PAD;
       return puppet.pick((u + px) / (1 + 2 * px), (v + py) / (1 + 2 * py));
     }
@@ -617,6 +637,8 @@ function drawCharacter(dt) {
       && motion.act === act && motion.mirrored === mirror && !dragging) return; // only breathing and such: fewer frames will do
   Motion.step(motion, puppetDue, {
     at: [window.screenX, window.screenY],
+    walkTravel: walking?.travel,
+    plantedTurn: !!walking,
     height: petH,
     sprite: current,
     shows,
@@ -626,32 +648,16 @@ function drawCharacter(dt) {
     mirrored: mirror,
     look,
   });
+  if (walking) walking.travel = 0;
   puppetDue = 0;
   const selected = Frames.select(motion);
   const frameImage = selected ? images[selected] : null;
   const pose = motion.pose;
-  const lift = motion.body.ty;
-  if (puppet) {
-    const key = frameImage ? selected : current;
-    if (images[key]) {
-      puppet.show(key, images[key], rigs[key]);
-      // The drawing supplies the primary action. Hair and tail still respond
-      // to movement, while feet, hands and head keep their drawn pose.
-      puppet.draw(frameImage ? {
-        ...Puppet.REST,
-        mirror: pose.mirror,
-        breath: pose.breath * 0.35,
-        hair: pose.hair.map((offset) => offset * 0.4),
-        skirt: pose.skirt.map((offset) => offset * 0.25),
-        tail: pose.tail * 0.35,
-      } : pose);
-    }
-    canvas.style.transform = lift ? `translateY(${lift}px)` : '';
-    shadow.style.opacity = motion.shadow;
-    shadow.style.transform = motion.shadowScale !== 1 ? `scale(${motion.shadowScale})` : '';
-  } else {
-    petEl.classList.toggle('drawn-frame', !!frameImage);
-    if (frameImage && (selected !== drawnKey || pose.mirror !== drawnMirror)) {
+  // The standing jump GIF draws its own vertical arc.
+  const lift = selected?.startsWith('jump-in-place-') ? 0 : motion.body.ty;
+  petEl.classList.toggle('drawn-frame', !!frameImage);
+  if (frameImage) {
+    if (selected !== drawnKey || pose.mirror !== drawnMirror) {
       const { width, height } = frameImage;
       if (frameCanvas.width !== width || frameCanvas.height !== height) {
         frameCanvas.width = width;
@@ -663,7 +669,13 @@ function drawCharacter(dt) {
       frameContext.drawImage(frameImage, 0, 0);
     }
     frameCanvas.style.transform = lift ? `translateY(${lift}px)` : '';
+  } else if (puppet && images[current]) {
+    puppet.show(current, images[current], rigs[current]);
+    puppet.draw(pose);
+    canvas.style.transform = lift ? `translateY(${lift}px)` : '';
   }
+  shadow.style.opacity = motion.shadow;
+  shadow.style.transform = motion.shadowScale !== 1 ? `scale(${motion.shadowScale})` : '';
   drawnKey = frameImage ? selected : null;
   renderedKey = drawnKey || (puppet ? current : null);
   drawnMirror = pose.mirror;
@@ -674,14 +686,14 @@ function frame(now) {
   const dt = clamp((now - lastFrame) / 1000, 0.001, 0.05);
   lastFrame = now;
   if (pressed) window.pet.dragTick().then((at) => { if (at) windowAt = at; });
-  if (walking) stepWalk(dt);
   const moving = pressed || walking || !Swing.resting(swing);
   if (moving) {
     Swing.step(swing, dt, windowAt);
     drawPose();
   }
   drawCharacter(dt);
-  if (puppet || moving || drawnKey || (motion.jumpPhase != null && images['jump-0'])) requestAnimationFrame(frame);
+  if (walking) stepWalk(dt);
+  if (puppet || moving || drawnKey) requestAnimationFrame(frame);
   else framing = false;
 }
 
@@ -806,7 +818,8 @@ window.pet.onCommand((cmd) => {
     if (dragging) return;
     stopWalking();
     const line = (kind) => eventLine(kind).replace('{version}', cmd.version);
-    if (cmd.failed) show('busy', { line: line('updateFailed'), ms: 4200 });
+    if (cmd.status) say(cmd.status, { ms: 6000 });
+    else if (cmd.failed) show('busy', { line: line('updateFailed'), ms: 4200 });
     else if (cmd.upToDate) show('happy', { line: line('upToDate'), ms: 3600 });
     else {
       show('aha', { line: line('update'), ms: 6000 });
@@ -835,15 +848,14 @@ async function start() {
   applyGeometry(init.geometry);
   await Promise.all([
     ...Object.entries(sprites).map(([key, url]) => buildHitMap(key, url)),
-    ...Object.entries(init.animations || {}).map(([key, url]) => Frames.load(key, url, registerImage)),
+    ...Object.entries(init.animations || {}).map(([key, bytes]) => Frames.load(key, bytes, registerImage)),
   ]);
   puppet = Puppet.create(canvas);
   if (puppet) {
     petEl.classList.add('puppet');
-    // Continue the sequence on the 2D canvas if the WebGL context is lost.
+    // GIF actions use the 2D canvas independently of WebGL.
     canvas.addEventListener('webglcontextlost', () => {
       puppet = null;
-      drawnKey = null; // redraw the current frame on the 2D canvas
       petEl.classList.remove('puppet');
     });
   }

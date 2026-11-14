@@ -1,50 +1,68 @@
-// Each atlas contains complete drawings on the same canvas and floor line.
+// Decode the GIFs into canvases so the app can pick the displayed frame
+// from the pet's movement and use that same frame for click-through.
 'use strict';
 
 const Frames = (() => {
-  const SHEETS = { walk: [4, 2], wave: [2, 2], munch: [2, 2], jump: [2, 2] };
-  const GREETING = [3, 0, 1, 2, 2, 1, 3];
-  const BITE = [[0.30, 0], [0.56, 1], [0.82, 2], [1.26, 3], [1.49, 2], [1.88, 3], [2.12, 2]];
-  const FRAME_WIDTH = 454;
-  const FRAME_HEIGHT = 668;
+  const clips = new Map();
 
   function select(motion) {
-    if (motion.act === 'walk' || motion.act === 'run') return `walk-${Math.floor(motion.gait * 8)}`;
-    if (motion.jumpPhase != null) {
-      const phase = motion.jumpPhase;
-      if (phase > 0.08 && phase < 0.96) {
-        const frame = phase < 0.23 ? 0 : phase < 0.35 || (phase > 0.68 && phase < 0.81) ? 1 : phase < 0.81 ? 2 : 3;
-        return `jump-${frame}`;
-      }
+    let name;
+    let time;
+    let phase;
+    if (motion.act === 'walk' || motion.act === 'run' || motion.act === 'walk-stop') {
+      name = 'walk';
+      phase = motion.gait;
+    } else if (motion.jumpPhase != null) {
+      name = motion.jumpKind === 'jump' ? 'jump-in-place' : 'jump';
+      phase = motion.jumpPhase;
+    } else if (motion.sprite === 'hello') {
+      name = 'wave';
+      time = motion.act === 'wave' ? motion.actT : motion.spriteT;
+    } else if (motion.sprite === 'eat') {
+      name = 'munch';
+      time = motion.act === 'munch' ? motion.actT : Infinity;
     }
-    if (motion.sprite === 'hello') {
-      const time = motion.act === 'wave' ? motion.actT : motion.spriteT;
-      return `wave-${time < 2.5 ? GREETING[Math.floor(time / 0.10) % GREETING.length] : 3}`;
-    }
-    if (motion.sprite === 'eat') {
-      const frame = motion.act === 'munch' ? (BITE.find(([end]) => motion.actT < end)?.[1] ?? 3) : 3;
-      return `munch-${frame}`;
-    }
-    return null;
+
+    const clip = clips.get(name);
+    if (!clip) return null;
+    if (phase != null) time = phase * clip.duration;
+    if (name === 'wave') time = time < 2.5 ? time % clip.duration : Infinity;
+    const frame = clip.ends.findIndex((end) => time < end);
+    return `${name}-${frame < 0 ? clip.ends.length - 1 : frame}`;
   }
 
-  async function load(key, url, add) {
-    const [cols, rows] = SHEETS[key];
-    const image = new Image();
-    image.src = url;
+  async function load(key, bytes, add) {
+    let decoder;
     try {
-      await image.decode();
-    } catch {
-      return; // the state still has its regular illustration
-    }
-    if (image.naturalWidth !== cols * FRAME_WIDTH || image.naturalHeight !== rows * FRAME_HEIGHT) return;
-    for (let i = 0; i < cols * rows; i++) {
-      const frame = document.createElement('canvas');
-      frame.width = FRAME_WIDTH;
-      frame.height = FRAME_HEIGHT;
-      const ctx = frame.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(image, -(i % cols) * FRAME_WIDTH, -Math.floor(i / cols) * FRAME_HEIGHT);
-      add(`${key}-${i}`, frame, ctx);
+      decoder = new ImageDecoder({ data: bytes, type: 'image/gif' });
+      await decoder.tracks.ready;
+      const count = decoder.tracks.selectedTrack?.frameCount;
+      if (!count) return;
+
+      let duration = 0;
+      const ends = [];
+      const frames = [];
+      for (let i = 0; i < count; i++) {
+        const { image } = await decoder.decode({ frameIndex: i });
+        try {
+          const frame = document.createElement('canvas');
+          frame.width = image.displayWidth;
+          frame.height = image.displayHeight;
+          const ctx = frame.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(image, 0, 0);
+          frames.push(ctx);
+          duration += (image.duration || 100000) / 1e6;
+          ends.push(duration);
+        } finally {
+          image.close();
+        }
+      }
+      frames.forEach((ctx, i) => add(`${key}-${i}`, ctx.canvas, ctx));
+      clips.set(key, { duration, ends });
+    } catch (error) {
+      console.warn(`Could not decode the ${key} animation`, error);
+    } finally {
+      decoder?.close();
     }
   }
 

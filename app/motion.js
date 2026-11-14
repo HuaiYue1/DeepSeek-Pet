@@ -24,11 +24,16 @@ const Motion = (() => {
   const FOLLOW = 30; // 1/s: how closely the smoothed window follows the real one
   const MAX_ACCEL = 4000; // screen px/s²: more than this is her window jumping
   const STEP = 1 / 120;
-  // Speed is in pet heights/s. Each cycle advances exactly one stride.
+  // Speed is in pet heights/s. Both gaits use the same drawn stride.
+  // One cycle moves 96 pixels on the skirt-walk drawing's 500 px canvas.
   const GAIT = {
-    walk: { speed: 0.22, period: 0.66, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
-    run: { speed: 0.484, period: 0.41, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
+    walk: { speed: 0.15, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
+    run: { speed: 0.25, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
   };
+  const STRIDE = 96 / 500;
+  const GATHERED = [[0.25, 0.32], [0.75, 0.82]]; // feet pass underneath the hips
+  const JUMP_TIME = 1.10;
+  const HOP_TIME = 0.45;
   const CROUCH = [[0, 0], [0.16, 1], [0.28, 0], [0.77, 0], [0.89, 0.84], [1, 0]];
   const STRETCH = [[0, 0], [0.18, 0.2], [0.42, 1], [0.59, 1], [0.83, -0.18], [1, 0]];
   // tail wag by sprite (or activity): [angle, seconds per wag]
@@ -62,7 +67,10 @@ const Motion = (() => {
       ahoge: { a: 0, v: 0 },
       lift: [0, 0, 0], // her body's height above the floor (px) over the last frames
       breath: 0, // phase
-      gait: 0.25, // fraction of a stride, starting with the feet passing
+      gait: GATHERED[0][0], // fraction of a stride, starting with the feet passing
+      settleFrom: 0,
+      settleTo: 0,
+      settleTime: 0,
       stride: 0, // 0 standing .. 1 walking
       gaitKind: GAIT.walk,
       head: [0, 0], // angle and how fast it changes
@@ -79,6 +87,7 @@ const Motion = (() => {
       wasHeld: false,
       dropT: Infinity,
       jumpPhase: null,
+      jumpKind: null,
       wave: [0, 0],
       wrist: [0, 0],
       bite: [0, 0],
@@ -97,6 +106,16 @@ const Motion = (() => {
   function hop(t, time, height) {
     const air = clamp((t / time - 0.20) / 0.62, 0, 1);
     return height * 4 * air * (1 - air);
+  }
+
+  // Approach the target over a few tenths of a second and brake as soon as
+  // the distance left calls for it. Dimensions are screen px and seconds.
+  function walkSpeed(act, speed, remaining, height, dt) {
+    const top = GAIT[act].speed * height;
+    const accel = top / 0.32;
+    const brake = top / 0.27;
+    const target = Math.min(top, Math.sqrt(2 * brake * remaining));
+    return speed + clamp(target - speed, -brake * dt, accel * dt);
   }
 
   // Horizontal travel during stance cancels the window's movement. The
@@ -132,10 +151,13 @@ const Motion = (() => {
 
   // Advance by `dt` seconds. `now` is what she is up to:
   //   at        her window on screen (screen px)
+  //   walkTravel  confirmed horizontal distance moved since the last frame (screen px)
   //   height    how tall she is on screen (screen px)
   //   sprite    the sprite showing, and `shows` counting the times one was
   //             shown, so showing the same one again starts it over
-  //   act       what she is doing: walk, run, jump, tap, dance, stretch, munch, wave or ''
+  //   act       what she is doing: walk, run, walk-stop, jump, hop, tap,
+  //             dance, stretch, munch, wave or ''
+  //   plantedTurn  keep her feet down while changing direction on a walk
   //   held      being carried, `tilt` tilted by this much (swing.js)
   //   mirrored  facing right
   //   look      a head tilt she wants, or 0
@@ -159,7 +181,15 @@ const Motion = (() => {
       m.spriteT += dt;
     }
     if (now.act !== m.act) {
-      if (GAIT[now.act] && !GAIT[m.act]) m.gait = 0.25;
+      if (GAIT[now.act] && !GAIT[m.act]) m.gait = GATHERED[0][0];
+      if (now.act === 'walk-stop') {
+        m.settleFrom = m.gait;
+        // Finish the step in flight, then stand with both feet close.
+        const span = GATHERED.find(([, end]) => end > m.gait);
+        const gathered = span ? Math.max(m.gait, span[0]) : 1 + GATHERED[0][0];
+        m.settleTo = gathered;
+        m.settleTime = Math.min(0.15, (gathered - m.gait) * 0.75);
+      }
       [m.act, m.actT] = [now.act, 0];
     } else {
       m.actT += dt;
@@ -175,16 +205,21 @@ const Motion = (() => {
       m.atV = [0, 0];
     }
 
-    const dx = m.lastX == null ? 0 : Math.abs(now.at[0] - m.lastX);
+    const dx = now.walkTravel ?? (m.lastX == null ? 0 : Math.abs(now.at[0] - m.lastX));
     m.lastX = now.at[0];
     const gait = GAIT[act];
     if (gait) m.gaitKind = gait;
     const walking = !!gait;
-    const strideDistance = m.gaitKind.speed * m.gaitKind.period * SPRITE_HEIGHT;
+    const strideDistance = STRIDE * SPRITE_HEIGHT;
     const travel = walking && dx * scale <= strideDistance / 2 ? dx * scale : 0;
     m.stride += ((walking ? 1 : 0) - m.stride) * (1 - Math.exp(-dt * (walking ? 13 : 10)));
     if (!walking && m.stride < 0.005) m.stride = 0;
-    m.gait = (m.gait + travel / strideDistance) % 1;
+    if (act === 'walk-stop') {
+      const u = m.settleTime ? ease(clamp(m.actT / m.settleTime, 0, 1)) : 1;
+      m.gait = (m.settleFrom + (m.settleTo - m.settleFrom) * u) % 1;
+    } else {
+      m.gait = (m.gait + travel / strideDistance) % 1;
+    }
     const phase = TAU * m.gait;
     const bob = m.gaitKind.bob * m.stride * (0.5 - 0.5 * Math.cos(2 * phase));
 
@@ -194,20 +229,25 @@ const Motion = (() => {
     let crouch = 0;
     let tuck = 0;
     m.jumpPhase = null;
+    m.jumpKind = null;
     const stretching = act === 'stretch' ? keys(STRETCH, m.actT / 1.8) : 0;
     if (!now.held) {
-      const jumping = act === 'jump' && m.actT < 0.45 || (m.sprite === 'happy' && !act && m.spriteT < 1);
+      const crossing = act === 'hop';
+      const time = crossing ? HOP_TIME : JUMP_TIME;
+      const explicit = crossing || act === 'jump';
+      const t = explicit ? m.actT : m.spriteT;
+      const jumping = (explicit || (m.sprite === 'happy' && !act)) && t < time;
       if (jumping) {
-        const time = act === 'jump' ? 0.45 : 0.5;
-        const t = act === 'jump' ? m.actT : m.spriteT % time;
-        const height = (act === 'jump' ? 26 : 12) * k;
+        const height = crossing ? 26 * k : 0.11 * now.height;
+        m.jumpKind = crossing ? 'hop' : 'jump';
         m.jumpPhase = t / time;
-        ty = hop(t, time, height);
-        crouch = (act === 'jump' ? 56 : 30) * keys(CROUCH, t / time);
+        const air = clamp((t - 0.29) / 0.35, 0, 1);
+        ty = crossing ? hop(t, time, height) : height * 4 * air * (1 - air);
+        crouch = 56 * keys(CROUCH, m.jumpPhase);
         tuck = ty / height;
       }
       if (m.turnT < 0.26) {
-        ty += hop(m.turnT, 0.26, 5 * k);
+        if (!now.plantedTurn) ty += hop(m.turnT, 0.26, 5 * k);
         crouch += 18 * keys(CROUCH, m.turnT / 0.26);
       }
       if (m.dropT < 0.32) crouch += 64 * keys([[0, 0], [0.20, 1], [0.58, -0.13], [1, 0]], m.dropT / 0.32);
@@ -370,8 +410,8 @@ const Motion = (() => {
     return !m.act && !m.wasHeld && m.dropT > 0.32 && m.kickWeight < 0.005
       && Math.abs(m.wave[0]) + Math.abs(m.wrist[0]) < 0.01 && m.bite[0] < 0.1
       && !['hello', 'busy'].includes(m.sprite) && m.stride === 0 && still(m.hair) && still(m.skirt) && Math.abs(m.ahoge.v) < 0.05
-      && Math.hypot(...m.atV) < 1 && m.turnT > 0.3 && m.spriteT > 1 && m.blinkT > 0.2;
+      && Math.hypot(...m.atV) < 1 && m.turnT > 0.3 && m.spriteT > JUMP_TIME && m.blinkT > 0.2;
   }
 
-  return { create, step, calm, speed: (act) => GAIT[act].speed };
+  return { create, step, calm, walkSpeed };
 })();

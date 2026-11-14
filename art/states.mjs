@@ -103,7 +103,7 @@ export const EVENT_LINES = {
   // {version} is replaced by the version number
   update: ['新版本 v{version} 发布啦！右键菜单里就能下载～', '新版本 v{version} 来了，比 R2 来得还早！右键菜单去下载～'],
   upToDate: ['已经是最新版 v{version} 啦～'],
-  updateFailed: ['检查更新失败……服务器繁忙，请稍后再试。'],
+  updateFailed: ['更新失败，请稍后重试。也可以从右键菜单打开下载页。'],
 };
 
 // The art/cut canvas size that OVERLAYS and ICONS were measured on; they

@@ -1,6 +1,6 @@
 {
   "name": "deepseek-pet",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "DeepSeek-Pet（大肥鱼）— a DeepSeek-inspired whale-girl desktop pet",
   "author": "HuaiYue",
@@ -26,7 +26,7 @@
     "files": [
       "app/**/*",
       "art/png/*.png",
-      "art/animation/*.webp",
+      "art/animation/*.gif",
       "art/states.mjs",
       "package.json"
     ],
@@ -34,6 +34,11 @@
       "output": "dist"
     },
     "win": {
+      "publish": {
+        "provider": "github",
+        "owner": "HuaiYue1",
+        "repo": "DeepSeek-Pet"
+      },
       "target": [
         {
           "target": "nsis",
@@ -82,5 +87,8 @@
       "icon": "app/icon.png",
       "category": "Game"
     }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
   }
 }
