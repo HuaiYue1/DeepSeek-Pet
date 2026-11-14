@@ -99,12 +99,12 @@ body {
 }
 
 #pet[data-state="pop"] #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
-#pet[data-state="happy"] #sprite { animation: hop 0.5s ease-out 2, bob 3.2s ease-in-out 1s infinite; }
+#pet[data-state="happy"] #sprite { animation: jump 1.08s ease-out, bob 3.2s ease-in-out 1.08s infinite; }
 #pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
 #pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
-#pet[data-act="walk"] #sprite { animation: waddle 0.64s ease-in-out infinite; }
-#pet[data-act="run"] #sprite { animation: waddle 0.36s ease-in-out infinite; }
-#pet[data-act="jump"] #sprite { animation: jump 0.45s ease-out; }
+#pet[data-act="walk"] #sprite { animation: waddle 1.67s ease-in-out infinite; }
+#pet[data-act="run"] #sprite { animation: waddle 0.9s ease-in-out infinite; }
+#pet[data-act="hop"] #sprite { animation: none; }
 #pet[data-act="tap"] #sprite { animation: tap 0.5s ease-in-out 3; }
 #pet[data-act="dance"] #sprite { animation: sway 0.9s ease-in-out infinite; }
 #pet[data-act="stretch"] #sprite { animation: stretch 1.8s ease-in-out; }
@@ -120,11 +120,6 @@ body {
   0% { transform: scale(0.96, 1.03); }
   60% { transform: scale(1.02, 0.98); }
   100% { transform: scale(1); }
-}
-@keyframes hop {
-  0%, 100% { transform: translateY(0) scale(1); }
-  30% { transform: translateY(-12px) scale(0.98, 1.02); }
-  60% { transform: translateY(0) scale(1.03, 0.97); }
 }
 @keyframes shake {
   0%, 100% { transform: translateX(0) rotate(0); }

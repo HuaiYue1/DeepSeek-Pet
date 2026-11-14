@@ -9,11 +9,11 @@ const Frames = (() => {
     let name;
     let time;
     let phase;
-    if (motion.act === 'walk' || motion.act === 'run') {
+    if (motion.act === 'walk' || motion.act === 'run' || motion.act === 'walk-stop') {
       name = 'walk';
       phase = motion.gait;
     } else if (motion.jumpPhase != null) {
-      name = 'jump';
+      name = motion.jumpKind === 'jump' ? 'jump-in-place' : 'jump';
       phase = motion.jumpPhase;
     } else if (motion.sprite === 'hello') {
       name = 'wave';

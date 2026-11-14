@@ -82,7 +82,7 @@ function loadSprites() {
     const { width, height } = image.getSize();
     spriteSize = [width, height];
   }
-  for (const key of ['walk', 'wave', 'munch', 'jump']) {
+  for (const key of ['walk', 'wave', 'munch', 'jump', 'jump-in-place']) {
     const file = path.join(spriteDir, '..', 'animation', `${key}.gif`);
     if (fs.existsSync(file)) animations[key] = new Uint8Array(fs.readFileSync(file));
   }

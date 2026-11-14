@@ -48,8 +48,8 @@ test('standing still, she only stirs a little', () => {
 });
 
 test('walking, her feet take turns and her hair trails behind', () => {
-  const { frames } = run(3, walkingLeft(0.5, 2.5));
-  const walking = frames.filter((f) => f.t > 1.2 && f.t < 2.5);
+  const { frames } = run(4.7, walkingLeft(0.5, 4, 81));
+  const walking = frames.filter((f) => f.t > 1.2 && f.t < 4);
   // walking left, her hair streams out to the right
   assert.ok(walking.every((f) => f.pose.hair[0] > 3), 'hair trails');
   const lifted = walking.map(({ pose }) => pose.feet[0][1] > pose.feet[1][1] ? 0 : 1);
@@ -117,7 +117,7 @@ test('showing the same sprite again starts it over', () => {
 
 test('the gait advances with horizontal travel and stops during a pause', () => {
   const { m } = run(1, () => ({ act: 'walk' }));
-  assert.equal(m.gait, 0.25);
+  assert.equal(m.gait, 0.26);
   const start = m.gait;
   run(1, walkingLeft(0, 1), m);
   assert.notEqual(m.gait, start);
@@ -127,8 +127,25 @@ test('the gait advances with horizontal travel and stops during a pause', () => 
   assert.equal(m.gait, phase);
 });
 
+test('walking eases into the stride, brakes for the distance and settles its last step', () => {
+  const dt = 1 / 60;
+  const top = 81;
+  const first = Motion.walkSpeed('walk', 0, 300, 300, dt);
+  assert.ok(first > 0 && first < top / 10);
+  assert.equal(Motion.walkSpeed('walk', top, 100, 300, dt), top);
+  const brake = Motion.walkSpeed('walk', top, 4, 300, dt);
+  assert.ok(brake < top && brake > 0);
+
+  const { m } = run(0.1, () => ({ act: 'walk', at: [1450, 500], walkTravel: 0 }));
+  assert.equal(m.gait, 0.26);
+  run(dt, () => ({ act: 'walk', walkTravel: 30 }), m);
+  const before = m.gait;
+  run(0.16, () => ({ act: 'walk-stop', walkTravel: 0 }), m);
+  assert.ok(m.gait > before && m.gait >= 0.74 - 1e-12);
+});
+
 test('jump and release lower the hips while the feet are on the floor', () => {
-  const jump = run(0.6, (t) => ({ act: t < 0.45 ? 'jump' : '' })).frames;
+  const jump = run(1.2, (t) => ({ act: t < 1.08 ? 'jump' : '' })).frames;
   assert.ok(jump.some(({ pose, body }) => planted(body) && pose.hips[1] > 35));
   assert.ok(jump.some(({ pose, body }) => body.ty < -20 && pose.feet[0][1] > 25));
   const land = run(0.75, (t) => ({ held: t < 0.30 })).frames;

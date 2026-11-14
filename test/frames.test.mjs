@@ -40,14 +40,17 @@ test('GIF frames are decoded, timed and released', async () => {
   assert.equal(frames.select({ act: 'walk', gait: 0.2 }), 'walk-0');
   assert.equal(frames.select({ act: 'run', gait: 0.3 }), 'walk-1');
   assert.equal(frames.select({ act: 'run', gait: 0.8 }), 'walk-2');
+  assert.equal(frames.select({ act: 'walk-stop', gait: 0.3 }), 'walk-1');
   assert.equal(frames.select({ sprite: 'idle' }), null);
 });
 
 test('jump follows physics progress, greeting loops and feeding holds its last frame', async () => {
   const { frames } = framesWithDecoder([100, 100, 200]);
-  for (const name of ['jump', 'wave', 'munch']) await frames.load(name, new Uint8Array(), () => {});
+  for (const name of ['jump', 'jump-in-place', 'wave', 'munch']) await frames.load(name, new Uint8Array(), () => {});
   assert.equal(frames.select({ jumpPhase: 0.4 }), 'jump-1');
   assert.equal(frames.select({ jumpPhase: 0.9 }), 'jump-2');
+  assert.equal(frames.select({ jumpKind: 'hop', jumpPhase: 0.4 }), 'jump-1');
+  assert.equal(frames.select({ jumpKind: 'jump', jumpPhase: 0.4 }), 'jump-in-place-1');
   assert.equal(frames.select({ sprite: 'hello', spriteT: 0.43 }), 'wave-0');
   assert.equal(frames.select({ sprite: 'hello', spriteT: 2.6 }), 'wave-2');
   assert.equal(frames.select({ sprite: 'eat', act: 'munch', actT: 0.15 }), 'munch-1');
@@ -56,7 +59,7 @@ test('jump follows physics progress, greeting loops and feeding holds its last f
 });
 
 test('all packaged animation assets are GIF89a', () => {
-  for (const name of ['walk', 'wave', 'munch', 'jump']) {
+  for (const name of ['walk', 'wave', 'munch', 'jump', 'jump-in-place']) {
     const bytes = fs.readFileSync(new URL(`../art/animation/${name}.gif`, import.meta.url));
     assert.equal(bytes.toString('ascii', 0, 6), 'GIF89a');
     assert.equal(bytes.readUInt16LE(6), 454);
