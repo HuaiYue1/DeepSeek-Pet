@@ -99,11 +99,11 @@ body {
 }
 
 #pet[data-state="pop"] #sprite { animation: pop 0.28s ease-out, bob 3.2s ease-in-out 0.28s infinite; }
-#pet[data-state="happy"] #sprite { animation: jump 1.08s ease-out, bob 3.2s ease-in-out 1.08s infinite; }
+#pet[data-state="happy"] #sprite { animation: jump 1.10s ease-out, bob 3.2s ease-in-out 1.10s infinite; }
 #pet[data-state="busy"] #sprite { animation: shake 0.24s linear infinite; }
 #pet[data-state="sleep"] #sprite { animation: breathe 3.6s ease-in-out infinite; }
-#pet[data-act="walk"] #sprite { animation: waddle 1.67s ease-in-out infinite; }
-#pet[data-act="run"] #sprite { animation: waddle 0.9s ease-in-out infinite; }
+#pet[data-act="walk"] #sprite { animation: waddle 1.29s ease-in-out infinite; }
+#pet[data-act="run"] #sprite { animation: waddle 0.83s ease-in-out infinite; }
 #pet[data-act="hop"] #sprite { animation: none; }
 #pet[data-act="tap"] #sprite { animation: tap 0.5s ease-in-out 3; }
 #pet[data-act="dance"] #sprite { animation: sway 0.9s ease-in-out infinite; }

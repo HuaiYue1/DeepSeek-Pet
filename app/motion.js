@@ -25,14 +25,14 @@ const Motion = (() => {
   const MAX_ACCEL = 4000; // screen px/s²: more than this is her window jumping
   const STEP = 1 / 120;
   // Speed is in pet heights/s. Both gaits use the same drawn stride. The
-  // walk covers roughly 300 GIF pixels in a cycle on a 668 px canvas.
+  // support shoe travels about 100 px in half a stride on the 500 px canvas.
   const GAIT = {
-    walk: { speed: 0.27, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
-    run: { speed: 0.50, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
+    walk: { speed: 0.31, swing: 0.43, lift: 47, bob: 12, lean: -0.045 },
+    run: { speed: 0.48, swing: 0.54, lift: 69, bob: 20, lean: -0.095 },
   };
-  const STRIDE = 0.45;
-  const GATHERED = [[0.39, 0.65], [1.11, 1.40]].map((span) => span.map((time) => time / 1.5));
-  const JUMP_TIME = 1.08;
+  const STRIDE = 0.40;
+  const GATHERED = [[0.25, 0.32], [0.75, 0.82]]; // feet pass underneath the hips
+  const JUMP_TIME = 1.10;
   const HOP_TIME = 0.45;
   const CROUCH = [[0, 0], [0.16, 1], [0.28, 0], [0.77, 0], [0.89, 0.84], [1, 0]];
   const STRETCH = [[0, 0], [0.18, 0.2], [0.42, 1], [0.59, 1], [0.83, -0.18], [1, 0]];
@@ -238,10 +238,10 @@ const Motion = (() => {
       const t = explicit ? m.actT : m.spriteT;
       const jumping = (explicit || (m.sprite === 'happy' && !act)) && t < time;
       if (jumping) {
-        const height = 26 * k;
+        const height = crossing ? 26 * k : 0.11 * now.height;
         m.jumpKind = crossing ? 'hop' : 'jump';
         m.jumpPhase = t / time;
-        const air = clamp((t - 0.30) / 0.46, 0, 1);
+        const air = clamp((t - 0.29) / 0.35, 0, 1);
         ty = crossing ? hop(t, time, height) : height * 4 * air * (1 - air);
         crouch = 56 * keys(CROUCH, m.jumpPhase);
         tuck = ty / height;

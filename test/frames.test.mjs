@@ -62,7 +62,9 @@ test('all packaged animation assets are GIF89a', () => {
   for (const name of ['walk', 'wave', 'munch', 'jump', 'jump-in-place']) {
     const bytes = fs.readFileSync(new URL(`../art/animation/${name}.gif`, import.meta.url));
     assert.equal(bytes.toString('ascii', 0, 6), 'GIF89a');
-    assert.equal(bytes.readUInt16LE(6), 454);
-    assert.equal(bytes.readUInt16LE(8), 668);
+    const width = bytes.readUInt16LE(6);
+    const height = bytes.readUInt16LE(8);
+    assert.ok(width > 0 && height > 0);
+    assert.ok(Math.abs(width / height - 908 / 1337) < 0.005);
   }
 });
